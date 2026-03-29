@@ -1,4 +1,6 @@
 from fastapi import FastAPI
 
+from src.core.config import settings
 
-app = FastAPI()
+
+app = FastAPI(**settings.fastapi_kwargs)
