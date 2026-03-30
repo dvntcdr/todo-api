@@ -19,3 +19,4 @@ class User(Base):
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     refresh_tokens = relationship('RefreshToken', back_populates='owner')
+    tasks = relationship('Task', back_populates='owner')
