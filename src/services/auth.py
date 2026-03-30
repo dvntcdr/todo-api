@@ -8,13 +8,16 @@ from src.models.user import User
 from src.models.refresh_token import RefreshToken
 from src.core.exceptions import (
     AlreadyExistsException,
-    InvalidCredentialsException
+    InvalidCredentialsException,
+    TokenRevokedException,
+    TokenExpiredException
 )
 from src.core.security import (
     hash_password,
     verify_password,
     create_access_token,
-    create_refresh_token
+    create_refresh_token,
+    hash_refresh_token
 )
 from src.core.config import settings
 
@@ -52,6 +55,32 @@ class AuthService:
             raise InvalidCredentialsException()
 
         return await self._generate_tokens(user)
+
+    async def refresh(self, raw_token: str) -> TokenResponse:
+        token = await self._get_token(raw_token)
+
+        if token is None:
+            raise InvalidCredentialsException()
+
+        if token.is_revoked:
+            await self.token_repo.revoke_all_for_user(token.owner_id)
+            raise TokenRevokedException()
+
+        if token.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
+            raise TokenExpiredException()
+
+        await self.token_repo.revoke(token)
+
+        user = await self.user_repo.get_by_id(token.owner_id)
+
+        if user is None:
+            raise InvalidCredentialsException()
+
+        return await self._generate_tokens(user)
+
+    async def _get_token(self, raw_token: str) -> RefreshToken | None:
+        token_hash = hash_refresh_token(raw_token)
+        return await self.token_repo.get_by_hash(token_hash)
 
     async def _generate_tokens(self, user: User) -> TokenResponse:
         access_token = create_access_token(payload={'sub': user.username})
