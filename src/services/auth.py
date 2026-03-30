@@ -78,6 +78,20 @@ class AuthService:
 
         return await self._generate_tokens(user)
 
+    async def logout(self, raw_token: str) -> None:
+        token = await self._get_token(raw_token)
+
+        if token is None:
+            raise InvalidCredentialsException()
+
+        if token.is_revoked:
+            raise TokenRevokedException()
+
+        await self.token_repo.revoke(token)
+
+    async def logout_all(self, user: User) -> None:
+        await self.token_repo.revoke_all_for_user(user.id)
+
     async def _get_token(self, raw_token: str) -> RefreshToken | None:
         token_hash = hash_refresh_token(raw_token)
         return await self.token_repo.get_by_hash(token_hash)
