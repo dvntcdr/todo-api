@@ -12,6 +12,7 @@ from src.core.exceptions import (
 )
 from src.core.security import (
     hash_password,
+    verify_password,
     create_access_token,
     create_refresh_token
 )
@@ -47,7 +48,7 @@ class AuthService:
     async def login(self, username: str, password: str) -> TokenResponse:
         user = await self.user_repo.get_by_username(username)
 
-        if user is None:
+        if user is None or not verify_password(password, user.hashed_password):
             raise InvalidCredentialsException()
 
         return await self._generate_tokens(user)
