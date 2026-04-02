@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     JWT_ALGORITHM: str = 'HS256'
 
+    PAGINATION_LIMIT: int = 10
+
     model_config = SettingsConfigDict(
         env_file='.env',
         env_file_encoding='utf-8',
