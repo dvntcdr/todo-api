@@ -28,3 +28,8 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True
     )
+
+
+class ChangeUsernameRequest(BaseModel):
+    password: str
+    new_username: str = Field(..., min_length=5, max_length=50)
