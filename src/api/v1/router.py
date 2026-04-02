@@ -1,7 +1,6 @@
 from fastapi import APIRouter
 
-from .routes import auth, task, project, user
-
+from .routes import auth, project, task, user
 
 v1_router = APIRouter(prefix='/v1')
 

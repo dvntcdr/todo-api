@@ -1,16 +1,15 @@
 from typing import Annotated
 
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from src.api.deps.user import UserRepoDep
 from src.api.deps.session import SessionDep
-from src.services.auth import AuthService
-from src.repos.refresh_token import RefreshTokenRepository
-from src.core.security import verify_access_token
+from src.api.deps.user import UserRepoDep
 from src.core.exceptions import InvalidCredentialsException
+from src.core.security import verify_access_token
 from src.models.user import User
-
+from src.repos.refresh_token import RefreshTokenRepository
+from src.services.auth import AuthService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/v1/auth/token')
 

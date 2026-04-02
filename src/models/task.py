@@ -1,8 +1,8 @@
-from uuid import UUID
-from enum import StrEnum
 from datetime import datetime
+from enum import StrEnum
+from uuid import UUID
 
-from sqlalchemy import String, Text, Enum, DateTime, ForeignKey
+from sqlalchemy import DateTime, Enum, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base import Base

@@ -1,14 +1,11 @@
 from uuid import UUID
 
-from src.repos.project import ProjectRepository
-from src.models.user import User
+from src.core.exceptions import ForbiddenException, NotFoundException
 from src.models.project import Project
-from src.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
-from src.schemas.pagination import PaginationParams, PagedResponse
-from src.core.exceptions import (
-    NotFoundException,
-    ForbiddenException
-)
+from src.models.user import User
+from src.repos.project import ProjectRepository
+from src.schemas.pagination import PagedResponse, PaginationParams
+from src.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate
 
 
 class ProjectService:

@@ -2,8 +2,8 @@ from uuid import UUID
 
 from sqlalchemy import select
 
-from .base import BaseRepository
 from src.models.task import Task
+from src.repos.base import BaseRepository
 
 
 class TaskRepository(BaseRepository[Task]):

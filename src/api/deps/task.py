@@ -2,10 +2,10 @@ from typing import Annotated
 
 from fastapi import Depends
 
+from src.api.deps.project import ProjectRepoDep
 from src.api.deps.session import SessionDep
 from src.repos.task import TaskRepository
 from src.services.task import TaskService
-from src.api.deps.project import ProjectRepoDep
 
 
 def get_task_repo(session: SessionDep) -> TaskRepository:

@@ -1,15 +1,12 @@
 from uuid import UUID
 
-from src.core.exceptions import (
-    ForbiddenException,
-    NotFoundException
-)
+from src.core.exceptions import ForbiddenException, NotFoundException
 from src.models.task import Task
 from src.models.user import User
-from src.repos.task import TaskRepository
-from src.schemas.task import TaskCreate, TaskUpdate, TaskResponse
-from src.schemas.pagination import PagedResponse, PaginationParams
 from src.repos.project import ProjectRepository
+from src.repos.task import TaskRepository
+from src.schemas.pagination import PagedResponse, PaginationParams
+from src.schemas.task import TaskCreate, TaskResponse, TaskUpdate
 
 
 class TaskService:

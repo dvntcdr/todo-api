@@ -1,12 +1,11 @@
-import secrets
 import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 
+from jose import JWTError, jwt
 from pwdlib import PasswordHash
-from jose import jwt, JWTError
 
 from src.core.config import settings
-
 
 pwd_hash = PasswordHash.recommended()
 

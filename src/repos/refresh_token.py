@@ -2,8 +2,8 @@ from uuid import UUID
 
 from sqlalchemy import select
 
-from .base import BaseRepository
 from src.models.refresh_token import RefreshToken
+from src.repos.base import BaseRepository
 
 
 class RefreshTokenRepository(BaseRepository[RefreshToken]):

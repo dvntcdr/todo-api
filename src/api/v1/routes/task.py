@@ -2,13 +2,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, status
 
-from src.api.deps.task import TaskServiceDep
 from src.api.deps.auth import CurrentUserDep
-from src.models.task import Task
-from src.schemas.task import TaskResponse, TaskCreate, TaskUpdate
-from src.schemas.pagination import PagedResponse
 from src.api.deps.pagination import PaginationDep
-
+from src.api.deps.task import TaskServiceDep
+from src.models.task import Task
+from src.schemas.pagination import PagedResponse
+from src.schemas.task import TaskCreate, TaskResponse, TaskUpdate
 
 router = APIRouter(prefix='/tasks', tags=['tasks'])
 

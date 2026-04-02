@@ -1,19 +1,14 @@
 from fastapi import APIRouter, status
 
-from src.api.deps.auth import (
-    AuthServiceDep,
-    LoginFormDep,
-    CurrentUserDep
-)
+from src.api.deps.auth import AuthServiceDep, CurrentUserDep, LoginFormDep
 from src.models.user import User
-from src.schemas.user import UserResponse, UserCreate
 from src.schemas.auth import (
-    TokenResponse,
-    RefreshRequest,
+    ChangePasswordRequest,
     LogoutRequest,
-    ChangePasswordRequest
+    RefreshRequest,
+    TokenResponse,
 )
-
+from src.schemas.user import UserCreate, UserResponse
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 

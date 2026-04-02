@@ -1,15 +1,15 @@
 from uuid import UUID
 
-from src.repos.user import UserRepository
-from src.models.user import User
 from src.core.exceptions import (
-    NotFoundException,
+    AlreadyExistsException,
     InvalidCredentialsException,
     InvalidOperationException,
-    AlreadyExistsException
+    NotFoundException,
 )
 from src.core.security import verify_password
-from src.schemas.user import ChangeUsernameRequest, ChangeEmailRequest
+from src.models.user import User
+from src.repos.user import UserRepository
+from src.schemas.user import ChangeEmailRequest, ChangeUsernameRequest
 
 
 class UserService:

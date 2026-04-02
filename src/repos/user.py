@@ -1,7 +1,7 @@
-from sqlalchemy import select, or_
+from sqlalchemy import or_, select
 
-from .base import BaseRepository
 from src.models.user import User
+from src.repos.base import BaseRepository
 
 
 class UserRepository(BaseRepository[User]):
