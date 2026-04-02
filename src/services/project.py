@@ -3,7 +3,8 @@ from uuid import UUID
 from src.repos.project import ProjectRepository
 from src.models.user import User
 from src.models.project import Project
-from src.schemas.project import ProjectCreate, ProjectUpdate
+from src.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse
+from src.schemas.pagination import PaginationParams, PagedResponse
 from src.core.exceptions import (
     NotFoundException,
     ForbiddenException
@@ -29,8 +30,9 @@ class ProjectService:
 
         return project
 
-    async def get_all(self, user: User) -> list[Project]:
-        return await self.repo.get_all_by_owner(user.id)
+    async def get_all(self, user: User, pg_params: PaginationParams) -> PagedResponse[ProjectResponse]:
+        items, total = await self.repo.get_all_by_owner(user.id, pg_params.offset, pg_params.limit)
+        return PagedResponse.create(items, total, pg_params)
 
     async def get_by_id(self, project_id: UUID, user: User) -> Project:
         return await self._get_project_for_user(project_id, user)

@@ -13,8 +13,6 @@ class ProjectRepository(BaseRepository[Project]):
 
     model = Project
 
-    async def get_all_by_owner(self, user_id: UUID) -> list[Project]:
-        result = await self.session.scalars(
-            select(Project).where(Project.owner_id == user_id)
-        )
-        return list(result.all())
+    async def get_all_by_owner(self, user_id: UUID, offset: int, limit: int) -> tuple[list[Project], int]:
+        stmt = select(Project).where(Project.owner_id == user_id)
+        return await self.get_paginated(stmt, offset, limit)

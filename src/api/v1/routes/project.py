@@ -10,17 +10,20 @@ from src.schemas.project import (
     ProjectCreate,
     ProjectUpdate
 )
+from src.schemas.pagination import PagedResponse
+from src.api.deps.pagination import PaginationDep
 
 
 router = APIRouter(prefix='/projects', tags=['projects'])
 
 
-@router.get('/', response_model=list[ProjectResponse])
+@router.get('/', response_model=PagedResponse[ProjectResponse])
 async def get_projects(
     service: ProjectServiceDep,
-    current_user: CurrentUserDep
-) -> list[Project]:
-    return await service.get_all(current_user)
+    current_user: CurrentUserDep,
+    pg_params: PaginationDep
+) -> PagedResponse[ProjectResponse]:
+    return await service.get_all(current_user, pg_params)
 
 
 @router.get('/{project_id}', response_model=ProjectResponse)
