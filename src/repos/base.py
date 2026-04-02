@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, func, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -18,6 +18,13 @@ class BaseRepository[T]:
 
     async def get_all(self) -> list[T]:
         return list(await self.session.scalars(select(self.model)))
+
+    async def get_paginated(self, stmt: Select, offset: int, limit: int) -> tuple[list[T], int]:
+        total = await self.session.scalar(
+            select(func.count()).select_from(stmt.subquery())
+        ) or 0
+        result = await self.session.scalars(stmt.offset(offset).limit(limit))
+        return list(result.all()), total
 
     async def get_by_id(self, id: UUID) -> T | None:
         return await self.session.get(self.model, id)
