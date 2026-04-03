@@ -1,6 +1,13 @@
+from enum import StrEnum
+
 from pydantic import BaseModel, Field
 
 from src.core.config import settings
+
+
+class SortOrder(StrEnum):
+    ASC = 'asc'
+    DESC = 'desc'
 
 
 class PaginationParams(BaseModel):

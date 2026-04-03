@@ -6,7 +6,7 @@ from src.models.user import User
 from src.repos.project import ProjectRepository
 from src.repos.task import TaskRepository
 from src.schemas.pagination import PagedResponse, PaginationParams
-from src.schemas.task import TaskCreate, TaskResponse, TaskUpdate
+from src.schemas.task import TaskCreate, TaskFilterParams, TaskResponse, TaskUpdate
 from src.services.base import BaseService
 
 
@@ -30,8 +30,24 @@ class TaskService(BaseService[Task, TaskResponse]):
 
         return task
 
-    async def get_all(self, user: User, pg_params: PaginationParams) -> PagedResponse[TaskResponse]:
-        items, total = await self.task_repo.get_all_by_owner(user.id, pg_params.offset, pg_params.limit)
+    async def get_all(
+        self,
+        user: User,
+        pg_params: PaginationParams,
+        filters: TaskFilterParams | None = None
+    ) -> PagedResponse[TaskResponse]:
+        if filters is not None and filters.project_id is not None:
+            project = await self.project_repo.get_by_id(filters.project_id)
+            if project is None:
+                raise NotFoundException('Project not found')
+            if project.owner_id != user.id:
+                raise ForbiddenException()
+
+        filters_dict = filters.model_dump(exclude_none=True) if filters else {}
+
+        items, total = await self.task_repo.get_all_by_owner(
+            user.id, pg_params.offset, pg_params.limit, filters_dict
+        )
         return await self.paginate(items, total, pg_params)
 
     async def get_by_id(self, task_id: UUID, user: User) -> Task:
