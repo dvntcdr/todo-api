@@ -1,9 +1,11 @@
 from datetime import datetime
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.models.project import ProjectStatus
+from src.schemas.pagination import SortOrder
 
 
 class ProjectCreate(BaseModel):
@@ -32,3 +34,17 @@ class ProjectResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True
     )
+
+
+class ProjectSortField(StrEnum):
+    CREATED_AT = 'created_at'
+    DUE_DATE = 'due_date'
+    STATUS = 'status'
+
+
+class ProjectFilterParams(BaseModel):
+    status: ProjectStatus | None = None
+    due_date_from: datetime | None = None
+    due_date_to: datetime | None = None
+    sort_by: ProjectSortField = ProjectSortField.CREATED_AT
+    sort_order: SortOrder = SortOrder.DESC
