@@ -2,12 +2,12 @@ from datetime import datetime
 from uuid import uuid4
 
 from factory.base import Factory
-from factory.declarations import Sequence, LazyFunction
+from factory.declarations import LazyFunction, Sequence
 
-from src.models.user import User
-from src.models.task import Task, TaskStatus, TaskPriority
-from src.models.project import Project, ProjectStatus
 from src.core.security import hash_password
+from src.models.project import Project, ProjectStatus
+from src.models.task import Task, TaskPriority, TaskStatus
+from src.models.user import User
 
 
 class UserFactory(Factory):
