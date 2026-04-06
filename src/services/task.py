@@ -25,7 +25,7 @@ class TaskService(BaseService[Task, TaskResponse]):
         if task is None:
             raise NotFoundException('Task not found')
 
-        if task.owner != user:
+        if task.owner_id != user.id:
             raise ForbiddenException()
 
         return task
