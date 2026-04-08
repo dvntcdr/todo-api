@@ -1,18 +1,20 @@
-from unittest.mock import MagicMock
 from datetime import datetime, timezone
+from unittest.mock import MagicMock
 
 import pytest
 
 from src.core.exceptions import (
     AlreadyExistsException,
     InvalidCredentialsException,
+    InvalidOperationException,
+    TokenExpiredException,
     TokenRevokedException,
-    TokenExpiredException
 )
-from src.core.security import hash_refresh_token
+from src.core.security import hash_password
+from src.schemas.auth import ChangePasswordRequest
 from src.schemas.user import UserCreate
 from src.services.auth import AuthService
-from tests.factories import UserFactory, RefreshTokenFactory, REFRESH_TOKEN
+from tests.factories import REFRESH_TOKEN, RefreshTokenFactory, UserFactory
 
 USER_PASSWORD = 'pass123'
 
@@ -144,3 +146,37 @@ class TestRefresh:
 
         with pytest.raises(InvalidCredentialsException):
             await auth_service.refresh(REFRESH_TOKEN)
+
+
+class TestChangePassoword:
+    async def test_success(self, user_repo, auth_service: AuthService):
+        user = UserFactory.build()
+        data = ChangePasswordRequest(
+            password=USER_PASSWORD, new_password='new_password'
+        )
+        hashed_new_pwd = hash_password('new_password')
+        updated_user = UserFactory.build(hashed_password=hashed_new_pwd)
+
+        user_repo.update.return_value = updated_user
+
+        await auth_service.change_password(user, data)
+
+        user_repo.update.assert_called_once()
+
+    async def test_raises_if_not_verified(self, auth_service: AuthService):
+        user = UserFactory.build()
+        data = ChangePasswordRequest(
+            password='somepassword',  new_password='qwerty'
+        )
+
+        with pytest.raises(InvalidCredentialsException):
+            await auth_service.change_password(user, data)
+
+    async def test_raises_if_same_password(self, auth_service: AuthService):
+        user = UserFactory.build()
+        data = ChangePasswordRequest(
+            password=USER_PASSWORD, new_password=USER_PASSWORD
+        )
+
+        with pytest.raises(InvalidOperationException):
+            await auth_service.change_password(user, data)
