@@ -52,11 +52,12 @@ class ProjectFactory(Factory):
 REFRESH_TOKEN = 'VTDtrxWiLsgZAUt8bL55pKNgWDNhFl9aF-ppsuD9IQI1W0_kGcr5V1loFb4KBOxSyjlWNhBxDf0O8vxwWFms_A'
 
 
-class RefreshTokenfactory(Factory):
+class RefreshTokenFactory(Factory):
     id = LazyFunction(uuid4)
     hashed_token = LazyFunction(lambda: hash_refresh_token(REFRESH_TOKEN))
     expires_at = LazyFunction(lambda: datetime.now(timezone.utc) + timedelta(days=30))
     is_revoked = False
+    owner_id = LazyFunction(uuid4)
 
     class Meta:  # type: ignore
         model = RefreshToken
