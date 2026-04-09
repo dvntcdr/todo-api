@@ -31,7 +31,7 @@ async def get_task(
     return await service.get_by_id(task_id, current_user)
 
 
-@router.post('/', response_model=TaskResponse)
+@router.post('/', response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
     service: TaskServiceDep,
     data: TaskCreate,
