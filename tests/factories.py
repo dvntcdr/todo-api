@@ -11,7 +11,7 @@ from src.models.task import Task, TaskPriority, TaskStatus
 from src.models.user import User
 
 
-class UserFactory(Factory):
+class UserFactory(Factory[User]):
     id = LazyFunction(uuid4)
     username = Sequence(lambda n: f'user_{n}')
     email = Sequence(lambda n: f'johndoe_{n}@gmail.com')
@@ -23,7 +23,7 @@ class UserFactory(Factory):
         model = User
 
 
-class TaskFactory(Factory):
+class TaskFactory(Factory[Task]):
     id = LazyFunction(uuid4)
     title = Sequence(lambda n: f'Test task {n}')
     description = Sequence(lambda n: f'Test task {n} description')
@@ -37,7 +37,7 @@ class TaskFactory(Factory):
         model = Task
 
 
-class ProjectFactory(Factory):
+class ProjectFactory(Factory[Project]):
     id = LazyFunction(uuid4)
     title = Sequence(lambda n: f'Test project {n}')
     description = Sequence(lambda n: f'Test project {n} description')
@@ -52,7 +52,7 @@ class ProjectFactory(Factory):
 REFRESH_TOKEN = 'VTDtrxWiLsgZAUt8bL55pKNgWDNhFl9aF-ppsuD9IQI1W0_kGcr5V1loFb4KBOxSyjlWNhBxDf0O8vxwWFms_A'
 
 
-class RefreshTokenFactory(Factory):
+class RefreshTokenFactory(Factory[RefreshToken]):
     id = LazyFunction(uuid4)
     hashed_token = LazyFunction(lambda: hash_refresh_token(REFRESH_TOKEN))
     expires_at = LazyFunction(lambda: datetime.now(timezone.utc) + timedelta(days=30))
