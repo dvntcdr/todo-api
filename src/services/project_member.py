@@ -1,0 +1,92 @@
+from uuid import UUID
+
+from src.core.exceptions import (
+    AlreadyExistsException,
+    ForbiddenException,
+    InvalidOperationException,
+    NotFoundException,
+)
+from src.core.permissions import can_manage_members
+from src.models.project import Project
+from src.models.project_member import MemberRole, MemberStatus, ProjectMember
+from src.models.user import User
+from src.repos.project import ProjectRepository
+from src.repos.project_member import ProjectMemberRepository
+from src.repos.user import UserRepository
+from src.schemas.project_member import InviteMemberRequest
+
+
+class ProjectMemberService:
+    """
+    Project member service class
+    """
+
+    def __init__(
+        self,
+        member_repo: ProjectMemberRepository,
+        project_repo: ProjectRepository,
+        user_repo: UserRepository
+    ) -> None:
+        self.member_repo = member_repo
+        self.project_repo = project_repo
+        self.user_repo = user_repo
+
+    async def _get_project(self, project_id: UUID) -> Project:
+        project = await self.project_repo.get_by_id(project_id)
+        if project is None:
+            raise NotFoundException('Project not found')
+        return project
+
+    async def _get_membership(self, project_id: UUID, user_id: UUID) -> ProjectMember:
+        membership = await self.member_repo.get_membership(project_id, user_id)
+        if membership is None:
+            raise NotFoundException('Membership not found')
+        return membership
+
+    async def _require_manage_permission(self, project_id: UUID, user: User) -> None:
+        membership = await self._get_membership(project_id, user.id)
+        project = await self._get_project(project_id)
+
+        if project.owner_id == user.id:
+            return
+
+        if membership is None or not can_manage_members(membership):
+            raise ForbiddenException()
+
+    async def get_members(self, project_id: UUID, user: User) -> list[ProjectMember]:
+        project = await self._get_project(project_id)
+        membership = await self.member_repo.get_membership(project.id, user.id)
+
+        if membership is None or membership.role == MemberRole.VIEWER:
+            raise ForbiddenException('Only project members can view other members')
+
+        return await self.member_repo.get_project_members(project_id)
+
+    async def invite(self, project_id: UUID, data: InviteMemberRequest, user: User) -> ProjectMember:
+        await self._require_manage_permission(project_id, user)
+
+        invitee = await self.user_repo.get_by_username(data.username)
+        if invitee is None:
+            raise NotFoundException(f'User {data.username} not found')
+
+        existing = self.member_repo.get_membership(project_id, invitee.id)
+        if existing is not None:
+            raise AlreadyExistsException('User is already a member or has pending invite')
+
+        member = ProjectMember(
+            project_id=project_id,
+            user_id=invitee.id,
+            role=MemberRole.MEMBER,
+            status=MemberStatus.PENDING
+        )
+
+        return await self.member_repo.create(member)
+
+    async def accept_invite(self, project_id: UUID, user: User):
+        project = await self._get_project(project_id)
+        membership = await self._get_membership(project.id, user.id)
+
+        if membership.status == MemberStatus.ACCEPTED:
+            raise InvalidOperationException('Invite already accepted')
+
+        return await self.member_repo.update(membership, {'status': MemberStatus.ACCEPTED})
