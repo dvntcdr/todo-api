@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 18ce1193dd72
-Revises:
-Create Date: 2026-03-31 12:02:09.583196
+Revision ID: 32862275440e
+Revises: 
+Create Date: 2026-04-15 11:14:45.886718
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '18ce1193dd72'
+revision: str = '32862275440e'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -63,6 +63,20 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_refresh_tokens_hashed_token'), 'refresh_tokens', ['hashed_token'], unique=True)
     op.create_index(op.f('ix_refresh_tokens_id'), 'refresh_tokens', ['id'], unique=False)
+    op.create_table('project_members',
+    sa.Column('project_id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('role', sa.Enum('OWNER', 'MEMBER', 'VIEWER', name='memberrole'), nullable=False),
+    sa.Column('status', sa.Enum('PENDING', 'ACCEPTED', name='memberstatus'), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['project_id'], ['projects.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('project_id', 'user_id', name='uq_project_member')
+    )
+    op.create_index(op.f('ix_project_members_id'), 'project_members', ['id'], unique=False)
     op.create_table('tasks',
     sa.Column('title', sa.String(length=200), nullable=False),
     sa.Column('description', sa.Text(length=500), nullable=True),
@@ -89,6 +103,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_tasks_title'), table_name='tasks')
     op.drop_index(op.f('ix_tasks_id'), table_name='tasks')
     op.drop_table('tasks')
+    op.drop_index(op.f('ix_project_members_id'), table_name='project_members')
+    op.drop_table('project_members')
     op.drop_index(op.f('ix_refresh_tokens_id'), table_name='refresh_tokens')
     op.drop_index(op.f('ix_refresh_tokens_hashed_token'), table_name='refresh_tokens')
     op.drop_table('refresh_tokens')
