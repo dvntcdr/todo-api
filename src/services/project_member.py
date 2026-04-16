@@ -69,7 +69,7 @@ class ProjectMemberService:
         if invitee is None:
             raise NotFoundException(f'User {data.username} not found')
 
-        existing = self.member_repo.get_membership(project_id, invitee.id)
+        existing = await self.member_repo.get_membership(project_id, invitee.id)
         if existing is not None:
             raise AlreadyExistsException('User is already a member or has pending invite')
 
