@@ -2,18 +2,9 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.api.deps.project import ProjectRepoDep
-from src.api.deps.session import SessionDep
-from src.repos.task import TaskRepository
+from src.api.deps.repos import ProjectRepoDep, TaskRepoDep
 from src.schemas.task import TaskFilterParams
 from src.services.task import TaskService
-
-
-def get_task_repo(session: SessionDep) -> TaskRepository:
-    return TaskRepository(session)
-
-
-TaskRepoDep = Annotated[TaskRepository, Depends(get_task_repo)]
 
 
 def get_task_service(task_repo: TaskRepoDep, project_repo: ProjectRepoDep) -> TaskService:
@@ -21,5 +12,4 @@ def get_task_service(task_repo: TaskRepoDep, project_repo: ProjectRepoDep) -> Ta
 
 
 TaskServiceDep = Annotated[TaskService, Depends(get_task_service)]
-
 TaskFiltersDep = Annotated[TaskFilterParams, Depends()]

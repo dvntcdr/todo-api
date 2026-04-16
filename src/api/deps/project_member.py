@@ -1,23 +1,14 @@
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps.project import ProjectRepoDep
 from src.api.deps.user import UserRepoDep
-from src.repos.project_member import ProjectMemberRepository
 from src.services.project_member import ProjectMemberService
-
-
-def get_member_repo(session: AsyncSession) -> ProjectMemberRepository:
-    return ProjectMemberRepository(session)
-
-
-MemberRepoDep = Annotated[ProjectMemberRepository, Depends(get_member_repo)]
+from src.api.deps.repos import MemberRepoDep, ProjectRepoDep
 
 
 def get_member_service(
-    member_repo: ProjectMemberRepository,
+    member_repo: MemberRepoDep,
     project_repo: ProjectRepoDep,
     user_repo: UserRepoDep
 ) -> ProjectMemberService:
