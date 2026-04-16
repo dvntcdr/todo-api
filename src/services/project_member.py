@@ -53,17 +53,17 @@ class ProjectMemberService:
         if membership is None or not can_manage_members(membership):
             raise ForbiddenException()
 
-    async def get_members(self, project_id: UUID, user: User) -> list[ProjectMember]:
+    async def get_members(self, project_id: UUID, current_user: User) -> list[ProjectMember]:
         project = await self._get_project(project_id)
-        membership = await self.member_repo.get_membership(project.id, user.id)
+        membership = await self.member_repo.get_membership(project.id, current_user.id)
 
         if membership is None or membership.role == MemberRole.VIEWER:
             raise ForbiddenException('Only project members can view other members')
 
         return await self.member_repo.get_project_members(project_id)
 
-    async def invite(self, project_id: UUID, data: InviteMemberRequest, user: User) -> ProjectMember:
-        await self._require_manage_permission(project_id, user)
+    async def invite(self, project_id: UUID, data: InviteMemberRequest, current_user: User) -> ProjectMember:
+        await self._require_manage_permission(project_id, current_user)
 
         invitee = await self.user_repo.get_by_username(data.username)
         if invitee is None:
@@ -82,11 +82,36 @@ class ProjectMemberService:
 
         return await self.member_repo.create(member)
 
-    async def accept_invite(self, project_id: UUID, user: User):
+    async def accept_invite(self, project_id: UUID, current_user: User) -> ProjectMember:
         project = await self._get_project(project_id)
-        membership = await self._get_membership(project.id, user.id)
+        membership = await self._get_membership(project.id, current_user.id)
 
         if membership.status == MemberStatus.ACCEPTED:
             raise InvalidOperationException('Invite already accepted')
 
         return await self.member_repo.update(membership, {'status': MemberStatus.ACCEPTED})
+
+    async def update_role(self, project_id: UUID, user_id: UUID, role: MemberRole, current_user: User) -> ProjectMember:
+        await self._require_manage_permission(project_id, current_user)
+
+        membership = await self._get_membership(project_id, user_id)
+        if membership.role == MemberRole.OWNER:
+            raise InvalidOperationException('Cannot change role for project owner')
+
+        return await self.member_repo.update(membership, {'role': role})
+
+    async def remove_member(self, project_id: UUID, user_id: UUID, current_user: User) -> None:
+        await self._require_manage_permission(project_id, current_user)
+
+        membership = await self._get_membership(project_id, user_id)
+        if membership.role == MemberRole.OWNER:
+            raise InvalidOperationException('Cannot remove project owner')
+
+        await self.member_repo.delete(membership)
+
+    async def leave(self, project_id: UUID, current_user: User) -> None:
+        membership = await self._get_membership(project_id, current_user.id)
+        if membership.role == MemberRole.OWNER:
+            raise InvalidOperationException('Owner cannot leave - transfer ownership or delete the project')
+
+        await self.member_repo.delete(membership)
