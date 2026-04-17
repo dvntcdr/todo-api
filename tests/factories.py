@@ -9,6 +9,7 @@ from src.models.project import Project, ProjectStatus
 from src.models.refresh_token import RefreshToken
 from src.models.task import Task, TaskPriority, TaskStatus
 from src.models.user import User
+from src.models.project_member import ProjectMember, MemberRole, MemberStatus
 
 USER_PASSWORD = 'pass123'
 
@@ -63,3 +64,14 @@ class RefreshTokenFactory(Factory[RefreshToken]):
 
     class Meta:  # type: ignore
         model = RefreshToken
+
+
+class ProjectMemberFactory(Factory[ProjectMember]):
+    id = LazyFunction(uuid4)
+    project_id = LazyFunction(uuid4)
+    user_id = LazyFunction(uuid4)
+    role = MemberRole.OWNER
+    status = MemberStatus.ACCEPTED
+
+    class Meta:  # type: ignore
+        model = ProjectMember
