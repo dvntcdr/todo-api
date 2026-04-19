@@ -4,15 +4,21 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from src.core.limiter import limiter
 from src.core.security import create_access_token
 from src.db.base import Base
 from src.db.session import get_session
 from src.main import app
 from src.models.project import Project
+from src.models.project_member import MemberRole, MemberStatus, ProjectMember
 from src.models.task import Task
 from src.models.user import User
-from tests.factories import ProjectFactory, TaskFactory, UserFactory
-from src.core.limiter import limiter
+from tests.factories import (
+    ProjectFactory,
+    ProjectMemberFactory,
+    TaskFactory,
+    UserFactory,
+)
 
 TEST_DATABASE_URL = 'sqlite+aiosqlite:///./test.db'
 
@@ -69,6 +75,17 @@ async def user(db_session: AsyncSession) -> User:
 
 
 @pytest.fixture
+async def second_user(db_session: AsyncSession) -> User:
+    user = UserFactory.build()
+
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+
+    return user
+
+
+@pytest.fixture
 async def project(db_session: AsyncSession, user: User) -> Project:
     project = ProjectFactory.build(owner_id=user.id)
 
@@ -77,6 +94,48 @@ async def project(db_session: AsyncSession, user: User) -> Project:
     await db_session.refresh(project)
 
     return project
+
+
+@pytest.fixture
+async def membership(db_session: AsyncSession, user: User, project: Project) -> ProjectMember:
+    membership = ProjectMemberFactory(
+        project_id=project.id, user_id=user.id, role=MemberRole.OWNER
+    )
+
+    db_session.add(membership)
+    await db_session.commit()
+    await db_session.refresh(membership)
+
+    return membership
+
+
+@pytest.fixture
+async def second_membership(db_session: AsyncSession, second_user: User, project: Project) -> ProjectMember:
+    membership = ProjectMemberFactory(
+        project_id=project.id, user_id=second_user.id, role=MemberRole.MEMBER
+    )
+
+    db_session.add(membership)
+    await db_session.commit()
+    await db_session.refresh(membership)
+
+    return membership
+
+
+@pytest.fixture
+async def second_pending_membership(db_session: AsyncSession, second_user: User, project: Project) -> ProjectMember:
+    membership = ProjectMemberFactory(
+        project_id=project.id,
+        user_id=second_user.id,
+        role=MemberRole.MEMBER,
+        status=MemberStatus.PENDING
+    )
+
+    db_session.add(membership)
+    await db_session.commit()
+    await db_session.refresh(membership)
+
+    return membership
 
 
 @pytest.fixture
@@ -93,4 +152,10 @@ async def task(db_session: AsyncSession, user: User, project: Project) -> Task:
 @pytest.fixture
 def auth_headers(user: User) -> dict[str, str]:
     token = create_access_token({'sub': user.username})
+    return {'Authorization': f'Bearer {token}'}
+
+
+@pytest.fixture
+def second_auth_headers(second_user: User) -> dict[str, str]:
+    token = create_access_token({'sub': second_user.username})
     return {'Authorization': f'Bearer {token}'}
