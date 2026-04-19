@@ -33,7 +33,7 @@ async def invite_member(
     return await service.invite(project_id, data, current_user)
 
 
-@router.post('/accept', response_model=MemberResponse)
+@router.post('/accept-invite', response_model=MemberResponse)
 async def accept_invite(
     project_id: UUID,
     service: MemberServiceDep,
@@ -42,7 +42,7 @@ async def accept_invite(
     return await service.accept_invite(project_id, current_user)
 
 
-@router.patch('/{user_id}/role', response_model=MemberResponse)
+@router.patch('/{user_id}/update-role', response_model=MemberResponse)
 async def update_member_role(
     project_id: UUID,
     user_id: UUID,
@@ -55,7 +55,7 @@ async def update_member_role(
     )
 
 
-@router.delete('/me', status_code=status.HTTP_204_NO_CONTENT)
+@router.delete('/leave', status_code=status.HTTP_204_NO_CONTENT)
 async def leave_project(
     project_id: UUID,
     service: MemberServiceDep,
