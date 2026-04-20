@@ -17,10 +17,12 @@ def get_user_and_task():
 
 
 class TestGetById:
-    async def test_success(self, task_repo, task_service: TaskService):
+    async def test_success(self, task_repo, project_repo, task_service: TaskService):
         user, task = get_user_and_task()
+        project = ProjectFactory.build(owner_id=user.id)
 
         task_repo.get_by_id.return_value = task
+        project_repo.get_by_id.return_value = project
 
         result = await task_service.get_by_id(task.id, user)
 
@@ -45,12 +47,14 @@ class TestGetById:
 
 
 class TestGetAll:
-    async def test_success(self, task_repo, task_service: TaskService):
+    async def test_success(self, task_repo, project_repo, task_service: TaskService):
         user = UserFactory.build()
+        project = ProjectFactory.build(owner_id=user.id)
         tasks = [TaskFactory.build(owner_id=user.id) for _ in range(3)]
         pg_params = PaginationParams()  # type: ignore
 
-        task_repo.get_all_by_owner.return_value = (tasks, 3)
+        task_repo.get_accessible_tasks.return_value = (tasks, 3)
+        project_repo.get_by_id.return_value = project
 
         result = await task_service.get_all(user, pg_params)
 

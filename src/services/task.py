@@ -79,7 +79,7 @@ class TaskService(BaseService[Task, TaskResponse]):
         if task.owner_id == user.id:
             return task
 
-        access = self._get_project_access(task.project_id, user)
+        access = await self._get_project_access(task.project_id, user)
         if access == 'viewer':
             raise ForbiddenException()
 

@@ -52,6 +52,10 @@ class TestGetAll:
         pg_params = PaginationParams()  # type: ignore
 
         project_repo.get_accessible_projects.return_value = (projects, len(projects))
+        project_repo.get_task_counts.return_value = {
+            'active': 1,
+            'completed': 1,
+        }
 
         result = await project_service.get_all(user, pg_params)
 
@@ -78,6 +82,10 @@ class TestGetAll:
         filters = ProjectFilterParams(status=ProjectStatus.ACTIVE)
 
         project_repo.get_accessible_projects.return_value = (projects, len(projects))
+        project_repo.get_task_counts.return_value = {
+            'active': 1,
+            'completed': 1,
+        }
 
         result = await project_service.get_all(user, pg_params, filters)
 

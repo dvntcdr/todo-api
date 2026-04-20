@@ -18,8 +18,8 @@ def user_service(user_repo) -> UserService:
 
 
 @pytest.fixture
-def task_service(task_repo, project_repo) -> TaskService:
-    return TaskService(task_repo, project_repo)
+def task_service(task_repo, project_repo, member_repo) -> TaskService:
+    return TaskService(task_repo, project_repo, member_repo)
 
 
 @pytest.fixture

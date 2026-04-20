@@ -2,12 +2,10 @@ from typing import Any
 from uuid import uuid4
 
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.project import Project
 from src.models.task import Task, TaskPriority, TaskStatus
 from src.models.user import User
-from tests.factories import ProjectFactory, TaskFactory, UserFactory
 
 
 class TestGetTasks:
@@ -64,16 +62,15 @@ class TestGetTask:
         )
         assert response.status_code == 404
 
-    async def test_not_owned(self, user: User, db_session: AsyncSession, client: AsyncClient, auth_headers):
-        other_user = UserFactory.build()
-        task = TaskFactory.build(owner_id=other_user.id)
-
-        db_session.add(other_user)
-        db_session.add(task)
-        await db_session.commit()
-
+    async def test_not_owned(
+        self,
+        user: User,  # noqa
+        task: Task,
+        client: AsyncClient,
+        second_auth_headers
+    ):
         response = await client.get(
-            self.URL.format(str(task.id)), headers=auth_headers
+            self.URL.format(str(task.id)), headers=second_auth_headers
         )
 
         assert response.status_code == 403
@@ -112,17 +109,14 @@ class TestCreateTask:
         response = await client.post(self.URL, json=task_data, headers=auth_headers)
         assert response.status_code == 404
 
-    async def test_project_not_owned(self, client: AsyncClient, db_session: AsyncSession, auth_headers):
-        other_user = UserFactory.build()
-        project = ProjectFactory.build(owner_id=other_user.id)
-
-        db_session.add(other_user)
-        db_session.add(project)
-        await db_session.commit()
-
+    async def test_project_not_owned(
+        self,
+        project: Project,
+        client: AsyncClient,
+        second_auth_headers
+    ):
         task_data = self._get_task_data(project_id=str(project.id))
-
-        response = await client.post(self.URL, json=task_data, headers=auth_headers)
+        response = await client.post(self.URL, json=task_data, headers=second_auth_headers)
 
         assert response.status_code == 403
 
@@ -141,7 +135,6 @@ class TestUpdateTask:
 
     async def test_success(self, task: Task, client: AsyncClient, auth_headers):
         task_data = self._get_update_task_data()
-
         response = await client.patch(
             self.URL.format(str(task.id)), json=task_data, headers=auth_headers
         )
@@ -149,30 +142,26 @@ class TestUpdateTask:
         data = response.json()
 
         assert response.status_code == 200
-
         for field, value in task_data.items():
             assert data[field] == value
 
     async def test_not_found(self, client: AsyncClient, auth_headers):
         task_data = self._get_update_task_data()
-
         response = await client.patch(
             self.URL.format(str(uuid4())), json=task_data, headers=auth_headers
         )
 
         assert response.status_code == 404
 
-    async def test_not_owned(self, db_session: AsyncSession, client: AsyncClient, auth_headers):
-        other_user = UserFactory.build()
-        task = TaskFactory.build(owner_id=other_user.id)
+    async def test_not_owned(
+        self,
+        task: Task,
+        client: AsyncClient,
+        second_auth_headers
+    ):
         task_data = self._get_update_task_data()
-
-        db_session.add(other_user)
-        db_session.add(task)
-        await db_session.commit()
-
         response = await client.patch(
-            self.URL.format(str(task.id)), json=task_data, headers=auth_headers
+            self.URL.format(str(task.id)), json=task_data, headers=second_auth_headers
         )
 
         assert response.status_code == 403
@@ -195,16 +184,14 @@ class TestDeleteTask:
 
         assert response.status_code == 404
 
-    async def test_not_owned(self, db_session: AsyncSession, client: AsyncClient, auth_headers):
-        other_user = UserFactory.build()
-        task = TaskFactory.build(owner_id=other_user.id)
-
-        db_session.add(other_user)
-        db_session.add(task)
-        await db_session.commit()
-
+    async def test_not_owned(
+        self,
+        task: Task,
+        client: AsyncClient,
+        second_auth_headers
+    ):
         response = await client.delete(
-            self.URL.format(str(task.id)), headers=auth_headers
+            self.URL.format(str(task.id)), headers=second_auth_headers
         )
 
         assert response.status_code == 403

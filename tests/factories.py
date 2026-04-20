@@ -47,6 +47,8 @@ class ProjectFactory(Factory[Project]):
     status = ProjectStatus.ACTIVE
     due_date = LazyFunction(lambda: datetime(2026, 12, 12))
     owner_id = LazyFunction(uuid4)
+    created_at = LazyFunction(lambda: datetime(2026, 1, 1))
+    updated_at = LazyFunction(lambda: datetime(2026, 1, 1))
 
     class Meta:  # type: ignore
         model = Project
