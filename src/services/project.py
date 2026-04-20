@@ -47,7 +47,7 @@ class ProjectService(BaseService[Project, ProjectResponse]):
         filters: ProjectFilterParams | None = None
     ) -> PagedResponse[ProjectResponse]:
         filters_dict = filters.model_dump(exclude_none=True) if filters else {}
-        items, total = await self.project_repo.get_all_by_owner(
+        items, total = await self.project_repo.get_accessible_projects(
             user.id, pg_params.offset, pg_params.limit, filters_dict
         )
         return await self.paginate(items, total, pg_params)
