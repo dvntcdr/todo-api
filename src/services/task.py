@@ -1,9 +1,11 @@
 from uuid import UUID
 
 from src.core.exceptions import ForbiddenException, NotFoundException
+from src.core.permissions import can_edit_tasks, can_view_tasks
 from src.models.task import Task
 from src.models.user import User
 from src.repos.project import ProjectRepository
+from src.repos.project_member import ProjectMemberRepository
 from src.repos.task import TaskRepository
 from src.schemas.pagination import PagedResponse, PaginationParams
 from src.schemas.task import TaskCreate, TaskFilterParams, TaskResponse, TaskUpdate
@@ -15,9 +17,15 @@ class TaskService(BaseService[Task, TaskResponse]):
     Task service class
     """
 
-    def __init__(self, task_repo: TaskRepository, project_repo: ProjectRepository) -> None:
+    def __init__(
+        self,
+        task_repo: TaskRepository,
+        project_repo: ProjectRepository,
+        member_repo: ProjectMemberRepository
+    ) -> None:
         self.task_repo = task_repo
         self.project_repo = project_repo
+        self.member_repo = member_repo
 
     async def _get_task_for_user(self, task_id: UUID, user: User) -> Task:
         task = await self.task_repo.get_by_id(task_id)
@@ -30,6 +38,25 @@ class TaskService(BaseService[Task, TaskResponse]):
 
         return task
 
+    async def _get_project_access(self, project_id: UUID, user) -> str:
+        project = await self.project_repo.get_by_id(project_id)
+
+        if project is None:
+            raise NotFoundException('Project not found')
+
+        if project.owner_id == user.id:
+            return 'owner'
+
+        membership = await self.member_repo.get_membership(project.id, user.id)
+
+        if membership is None or not can_view_tasks(membership):
+            raise ForbiddenException()
+
+        if can_edit_tasks(membership):
+            return 'member'
+
+        return 'viewer'
+
     async def get_all(
         self,
         user: User,
@@ -37,15 +64,11 @@ class TaskService(BaseService[Task, TaskResponse]):
         filters: TaskFilterParams | None = None
     ) -> PagedResponse[TaskResponse]:
         if filters is not None and filters.project_id is not None:
-            project = await self.project_repo.get_by_id(filters.project_id)
-            if project is None:
-                raise NotFoundException('Project not found')
-            if project.owner_id != user.id:
-                raise ForbiddenException()
+            await self._get_project_access(filters.project_id, user)
 
         filters_dict = filters.model_dump(exclude_none=True) if filters else {}
 
-        items, total = await self.task_repo.get_all_by_owner(
+        items, total = await self.task_repo.get_accessible_tasks(
             user.id, pg_params.offset, pg_params.limit, filters_dict
         )
         return await self.paginate(items, total, pg_params)

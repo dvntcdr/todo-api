@@ -1,10 +1,11 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from src.models.task import Task
 from src.repos.base import BaseRepository
+from src.models.project_member import ProjectMember, MemberStatus
 
 
 class TaskRepository(BaseRepository[Task]):
@@ -31,4 +32,25 @@ class TaskRepository(BaseRepository[Task]):
         filters: dict[str, Any] | None = None
     ) -> tuple[list[Task], int]:
         stmt = select(Task).where(Task.owner_id == user_id)
+        return await self.get_paginated(stmt, offset, limit, filters)
+
+    async def get_accessible_tasks(
+        self,
+        user_id: UUID,
+        offset: int,
+        limit: int,
+        filters: dict | None = None
+    ) -> tuple[list[Task], int]:
+        stmt = (
+            select(Task)
+            .outerjoin(ProjectMember, ProjectMember.project_id == Task.project_id)
+            .where(
+                or_(
+                    Task.owner_id == user_id,
+                    (ProjectMember.user_id == user_id) &
+                    (ProjectMember.status == MemberStatus.ACCEPTED)
+                )
+            )
+            .distinct()
+        )
         return await self.get_paginated(stmt, offset, limit, filters)
