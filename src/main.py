@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
@@ -9,9 +12,17 @@ from src.api.v1.router import v1_router
 from src.core.config import settings
 from src.core.exceptions import AppException
 from src.core.limiter import limiter
+from src.core.cache import connect_redis, disconnect_redis
 
 
-app = FastAPI(**settings.fastapi_kwargs)
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator:
+    await connect_redis()
+    yield
+    await disconnect_redis()
+
+
+app = FastAPI(**settings.fastapi_kwargs, lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore
 

@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = 'sqlite+aiosqlite:///./todo.db'
     ALEMBIC_DATABASE_URL: str = 'sqlite:///./todo.db'
 
+    REDIS_URL: str = 'redis://localhost:6379'
+
     SECRET_KEY: str
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
