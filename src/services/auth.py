@@ -21,6 +21,7 @@ from src.repos.refresh_token import RefreshTokenRepository
 from src.repos.user import UserRepository
 from src.schemas.auth import ChangePasswordRequest, TokenResponse
 from src.schemas.user import UserCreate
+from src.core.cache_service import CacheService
 
 
 class AuthService:
@@ -28,9 +29,15 @@ class AuthService:
     Auth service class
     """
 
-    def __init__(self, user_repo: UserRepository, token_repo: RefreshTokenRepository) -> None:
+    def __init__(
+        self,
+        user_repo: UserRepository,
+        token_repo: RefreshTokenRepository,
+        cache: CacheService
+    ) -> None:
         self.user_repo = user_repo
         self.token_repo = token_repo
+        self.cache = cache
 
     async def register(self, data: UserCreate) -> User:
         existing = await self.user_repo.get_by_username_or_email(data.username, data.password)
@@ -50,7 +57,13 @@ class AuthService:
         return await self.user_repo.create(user)
 
     async def login(self, username: str, password: str) -> TokenResponse:
-        user = await self.user_repo.get_by_username(username)
+        if cached := await self.cache.get_user(username):
+            user = User(**cached)
+        else:
+            user = await self.user_repo.get_by_username(username)
+            if user is not None:
+                data = {c.name: str(getattr(user, c.name)) for c in user.__table__.columns}
+                await self.cache.set_user(user.username, data)
 
         if user is None or not verify_password(password, user.hashed_password):
             raise InvalidCredentialsException()

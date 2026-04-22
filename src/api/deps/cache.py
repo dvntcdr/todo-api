@@ -1,9 +1,10 @@
 from typing import Annotated
-from src.core.cache_service import CacheService
+
 from fastapi import Depends
 from redis.asyncio import Redis
-from src.core.cache import get_redis
 
+from src.core.cache import get_redis
+from src.core.cache_service import CacheService
 
 RedisDep = Annotated[Redis, Depends(get_redis)]
 
