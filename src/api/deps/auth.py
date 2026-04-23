@@ -4,8 +4,8 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from src.api.deps.cache import CacheServiceDep
-from src.api.deps.repos import UserRepoDep
-from src.api.deps.session import SessionDep
+from src.api.deps.db.repos import UserRepoDep
+from src.api.deps.db.session import SessionDep
 from src.core.caching.cache_keys import user_key_by_username
 from src.core.exceptions import InvalidCredentialsException
 from src.core.security import verify_access_token
