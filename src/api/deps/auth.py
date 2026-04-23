@@ -54,7 +54,7 @@ async def get_current_user(
     cached = await cache.get(user_key)
 
     if cached:
-        user = User(**cached)
+        user = User.from_dict(cached)
     else:
         user = await user_repo.get_by_username(username)
         if user:

@@ -1,11 +1,14 @@
 from uuid import UUID
 
+from src.core.caching.cache_keys import task_key_by_id
+from src.core.caching.cache_service import CacheService
 from src.core.exceptions import ForbiddenException, NotFoundException
 from src.core.security.permissions import can_edit_tasks, can_view_tasks
+from src.models.membership import MemberRole
 from src.models.task import Task
 from src.models.user import User
-from src.repos.project import ProjectRepository
 from src.repos.membership import ProjectMemberRepository
+from src.repos.project import ProjectRepository
 from src.repos.task import TaskRepository
 from src.schemas.pagination import PagedResponse, PaginationParams
 from src.schemas.task import TaskCreate, TaskFilterParams, TaskResponse, TaskUpdate
@@ -21,31 +24,46 @@ class TaskService(BaseService[Task, TaskResponse]):
         self,
         task_repo: TaskRepository,
         project_repo: ProjectRepository,
-        member_repo: ProjectMemberRepository
+        member_repo: ProjectMemberRepository,
+        cache: CacheService,
     ) -> None:
         self.task_repo = task_repo
         self.project_repo = project_repo
         self.member_repo = member_repo
+        self.cache = cache
 
-    async def _get_task_for_user(self, task_id: UUID, user: User) -> Task:
+    async def _get_task(self, task_id: UUID, use_cache: bool = True) -> Task:
+        task_key = task_key_by_id(task_id)
+
+        if use_cache:
+            try:
+                cached = await self.cache.get(task_key)
+                if cached:
+                    return Task.from_dict(cached)
+            except Exception:
+                pass  # TODO: add logging
+
         task = await self.task_repo.get_by_id(task_id)
 
         if task is None:
-            raise NotFoundException('Task not found')
+            raise NotFoundException("Task not found")
 
-        if task.owner_id != user.id:
-            raise ForbiddenException()
+        if use_cache:
+            try:
+                await self.cache.set(task_key, task.to_dict())
+            except Exception:
+                pass  # TODO: add logging
 
         return task
 
-    async def _get_project_access(self, project_id: UUID, user: User) -> str:
+    async def _get_project_access(self, project_id: UUID, user: User) -> MemberRole:
         project = await self.project_repo.get_by_id(project_id)
 
         if project is None:
-            raise NotFoundException('Project not found')
+            raise NotFoundException("Project not found")
 
         if project.owner_id == user.id:
-            return 'owner'
+            return MemberRole.OWNER
 
         membership = await self.member_repo.get_membership(project.id, user.id)
 
@@ -53,43 +71,35 @@ class TaskService(BaseService[Task, TaskResponse]):
             raise ForbiddenException()
 
         if can_edit_tasks(membership):
-            return 'member'
+            return MemberRole.MEMBER
 
-        return 'viewer'
-
-    async def _get_task_and_check_view(self, task_id: UUID, user: User) -> Task:
-        task = await self.task_repo.get_by_id(task_id)
-
-        if task is None:
-            raise NotFoundException('Task not found')
-
+        return MemberRole.VIEWER
+    
+    async def _check_view_permission(self, task: Task, user: User) -> None:
         if task.project_id is None:
             if task.owner_id != user.id:
                 raise ForbiddenException()
-            return task
-
+            return
+        
         await self._get_project_access(task.project_id, user)
-        return task
 
-    async def _get_task_and_check_edit(self, task_id: UUID, user: User) -> Task:
-        task = await self.task_repo.get_by_id(task_id)
-        if task is None:
-            raise NotFoundException('Task not found')
-
+    async def _check_edit_permission(self, task: Task, user: User) -> None:
         if task.owner_id == user.id:
-            return task
-
-        access = await self._get_project_access(task.project_id, user)
-        if access == 'viewer':
-            raise ForbiddenException()
-
-        return task
+            return
+        
+        if task.project_id:
+            access = await self._get_project_access(task.project_id, user)
+            if access == MemberRole.VIEWER:
+                raise ForbiddenException()
+            return
+        
+        raise ForbiddenException()
 
     async def get_all(
         self,
         user: User,
         pg_params: PaginationParams,
-        filters: TaskFilterParams | None = None
+        filters: TaskFilterParams | None = None,
     ) -> PagedResponse[TaskResponse]:
         if filters is not None and filters.project_id is not None:
             await self._get_project_access(filters.project_id, user)
@@ -102,20 +112,33 @@ class TaskService(BaseService[Task, TaskResponse]):
         return await self.paginate(items, total, pg_params)
 
     async def get_by_id(self, task_id: UUID, user: User) -> Task:
-        return await self._get_task_and_check_view(task_id, user)
+        task = await self._get_task(task_id, use_cache=True)
+        await self._check_view_permission(task, user)
+        return task
 
     async def create(self, data: TaskCreate, user: User) -> Task:
         if data.project_id:
             await self._get_project_access(data.project_id, user)
 
         task = Task(**data.model_dump(exclude_unset=True), owner_id=user.id)
+        created = await self.task_repo.create(task)
 
-        return await self.task_repo.create(task)
+        await self.cache.set(task_key_by_id(created.id), created.to_dict())
+
+        return created
 
     async def update(self, task_id: UUID, data: TaskUpdate, user: User) -> Task:
-        task = await self._get_task_and_check_edit(task_id, user)
-        return await self.task_repo.update(task, data.model_dump(exclude_unset=True))
+        task = await self._get_task(task_id, use_cache=False)
+        await self._check_edit_permission(task, user)
+
+        updated = await self.task_repo.update(task, data.model_dump(exclude_unset=True))
+        await self.cache.invalidate(task_key_by_id(task.id))
+
+        return updated
 
     async def delete(self, task_id: UUID, user: User) -> None:
-        task = await self._get_task_and_check_edit(task_id, user)
-        return await self.task_repo.delete(task)
+        task = await self._get_task(task_id, use_cache=False)
+
+        await self._check_edit_permission(task, user)
+        await self.task_repo.delete(task)
+        await self.cache.invalidate(task_key_by_id(task.id))

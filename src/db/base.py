@@ -33,8 +33,8 @@ class Base(DeclarativeBase):
     @classmethod
     def from_dict(cls, data: dict) -> Self:
         for c in cls.__table__.columns:
-            if isinstance(c.type, uuid.UUID) and isinstance(data.get(c.name), str):
+            if isinstance(c.type, UUID) and isinstance(data.get(c.name), str):
                 data[c.name] = uuid.UUID(data[c.name])
-            elif isinstance(c.type, datetime) and isinstance(data.get(c.name), str):
+            elif isinstance(c.type, DateTime) and isinstance(data.get(c.name), str):
                 data[c.name] = datetime.fromisoformat(data[c.name])
         return cls(**data)
