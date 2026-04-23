@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from src.core.exceptions import ForbiddenException, NotFoundException
-from src.core.permissions import can_edit_tasks, can_view_tasks
+from src.core.security.permissions import can_edit_tasks, can_view_tasks
 from src.models.task import Task
 from src.models.user import User
 from src.repos.project import ProjectRepository

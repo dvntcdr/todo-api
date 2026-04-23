@@ -6,7 +6,7 @@ from src.core.exceptions import (
     InvalidOperationException,
     NotFoundException,
 )
-from src.core.permissions import can_manage_members
+from src.core.security.permissions import can_manage_members
 from src.models.project import Project
 from src.models.project_member import MemberRole, MemberStatus, ProjectMember
 from src.models.user import User

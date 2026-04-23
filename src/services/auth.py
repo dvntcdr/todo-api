@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
-from src.core.cache_keys import user_key_by_id, user_key_by_username
-from src.core.cache_service import CacheService
+from src.core.caching.cache_keys import user_key_by_id, user_key_by_username
+from src.core.caching.cache_service import CacheService
 from src.core.config import settings
 from src.core.exceptions import (
     AlreadyExistsException,
