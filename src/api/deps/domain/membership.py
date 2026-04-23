@@ -2,9 +2,9 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.api.deps.user import UserRepoDep
+from src.api.deps.domain.user import UserRepoDep
 from src.services.membership import ProjectMemberService
-from src.api.deps.repos import MemberRepoDep, ProjectRepoDep
+from src.api.deps.db.repos import MemberRepoDep, ProjectRepoDep
 
 
 def get_member_service(

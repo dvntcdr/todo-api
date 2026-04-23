@@ -4,7 +4,7 @@ from fastapi import APIRouter, status
 
 from src.api.deps.auth import CurrentUserDep
 from src.api.deps.pagination import PaginationDep
-from src.api.deps.project import ProjectServiceDep, ProjectFiltersDep
+from src.api.deps.domain.project import ProjectServiceDep, ProjectFiltersDep
 from src.models.project import Project
 from src.schemas.pagination import PagedResponse
 from src.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate

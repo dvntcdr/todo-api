@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.api.deps.repos import MemberRepoDep, ProjectRepoDep
+from src.api.deps.db.repos import MemberRepoDep, ProjectRepoDep
 from src.schemas.project import ProjectFilterParams
 from src.services.project import ProjectService
 

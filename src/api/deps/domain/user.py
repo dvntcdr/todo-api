@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.api.deps.repos import UserRepoDep
+from src.api.deps.db.repos import UserRepoDep
 from src.services.user import UserService
 
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from src.api.deps.auth import CurrentUserDep
-from src.api.deps.user import UserServiceDep
+from src.api.deps.domain.user import UserServiceDep
 from src.models.user import User
 from src.schemas.user import ChangeEmailRequest, ChangeUsernameRequest, UserResponse
 

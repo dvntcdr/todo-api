@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.api.deps.repos import ProjectRepoDep, TaskRepoDep, MemberRepoDep
+from src.api.deps.db.repos import ProjectRepoDep, TaskRepoDep, MemberRepoDep
 from src.schemas.task import TaskFilterParams
 from src.services.task import TaskService
 

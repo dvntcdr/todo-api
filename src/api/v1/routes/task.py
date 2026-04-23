@@ -4,7 +4,7 @@ from fastapi import APIRouter, status
 
 from src.api.deps.auth import CurrentUserDep
 from src.api.deps.pagination import PaginationDep
-from src.api.deps.task import TaskServiceDep, TaskFiltersDep
+from src.api.deps.domain.task import TaskServiceDep, TaskFiltersDep
 from src.models.task import Task
 from src.schemas.pagination import PagedResponse
 from src.schemas.task import TaskCreate, TaskResponse, TaskUpdate

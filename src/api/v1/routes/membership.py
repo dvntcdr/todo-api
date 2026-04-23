@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, status
 
 from src.api.deps.auth import CurrentUserDep
-from src.api.deps.membership import MemberServiceDep
+from src.api.deps.domain.membership import MemberServiceDep
 from src.models.membership import ProjectMember
 from src.schemas.membership import (
     InviteMemberRequest,

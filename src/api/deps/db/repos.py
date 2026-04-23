@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from src.api.deps.session import SessionDep
+from src.api.deps.db.session import SessionDep
 from src.repos.project import ProjectRepository
 from src.repos.membership import ProjectMemberRepository
 from src.repos.task import TaskRepository
