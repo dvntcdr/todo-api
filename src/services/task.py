@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from src.core.caching.cache_keys import task_key_by_id
+from src.core.caching.cache_manager import CacheManager
 from src.core.caching.cache_service import CacheService
 from src.core.exceptions import ForbiddenException, NotFoundException
 from src.core.security.permissions import can_edit_tasks, can_view_tasks
@@ -13,8 +14,6 @@ from src.repos.task import TaskRepository
 from src.schemas.pagination import PagedResponse, PaginationParams
 from src.schemas.task import TaskCreate, TaskFilterParams, TaskResponse, TaskUpdate
 from src.services.base import BaseService
-
-from src.core.caching.cache_manager import CacheManager
 
 
 class TaskService(BaseService[Task, TaskResponse]):
@@ -120,7 +119,10 @@ class TaskService(BaseService[Task, TaskResponse]):
         await self._check_edit_permission(task, user)
 
         updated = await self.task_repo.update(task, data.model_dump(exclude_unset=True))
-        await self.task_cache.invalidate(task_key_by_id(task.id))
+        await self.task_cache.set(
+            task_key_by_id(task.id),
+            updated
+        )
 
         return updated
 

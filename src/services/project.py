@@ -1,20 +1,23 @@
 from uuid import UUID
 
-from src.core.exceptions import ForbiddenException, NotFoundException
-from src.models.project import Project
+from src.core.caching.cache_manager import CacheManager
+from src.core.caching.cache_service import CacheService
+from src.core.exceptions import ForbiddenException
 from src.models.membership import MemberRole, MemberStatus, ProjectMember
+from src.models.project import Project
 from src.models.user import User
-from src.repos.project import ProjectRepository
 from src.repos.membership import ProjectMemberRepository
+from src.repos.project import ProjectRepository
 from src.schemas.pagination import PagedResponse, PaginationParams
 from src.schemas.project import (
     ProjectCreate,
     ProjectFilterParams,
     ProjectResponse,
     ProjectUpdate,
-    TaskCounts
+    TaskCounts,
 )
 from src.services.base import BaseService
+from src.core.caching.cache_keys import get_cache_key
 
 
 class ProjectService(BaseService[Project, ProjectResponse]):
@@ -22,19 +25,27 @@ class ProjectService(BaseService[Project, ProjectResponse]):
     Project service class
     """
 
+    CACHE_PREFIX: str = 'project:id'
+
     def __init__(
         self,
         project_repo: ProjectRepository,
-        member_repo: ProjectMemberRepository
+        member_repo: ProjectMemberRepository,
+        cache: CacheService
     ) -> None:
         self.project_repo = project_repo
         self.member_repo = member_repo
+        self.project_cache = CacheManager[Project](cache, Project)
+    
+    async def _get_project(self, project_id: UUID, use_cache: bool = True) -> Project:
+        return await self.project_cache.get_or_fetch(
+            self._project_key(project_id),
+            lambda: self.project_repo.get_by_id(project_id),
+            use_cache=use_cache
+        )
 
     async def _get_project_for_user(self, project_id: UUID, user: User, require_owner: bool = False) -> Project:
-        project = await self.project_repo.get_by_id(project_id)
-
-        if project is None:
-            raise NotFoundException('Project not found')
+        project = await self._get_project(project_id, use_cache=True)
 
         if project.owner_id == user.id:
             return project
@@ -54,6 +65,9 @@ class ProjectService(BaseService[Project, ProjectResponse]):
         response = ProjectResponse.model_validate(project)
         response.task_counts = TaskCounts(**counts)
         return response
+    
+    def _project_key(self, project_id: UUID) -> str:
+        return get_cache_key(self.CACHE_PREFIX, project_id)
 
     async def get_all(
         self,
@@ -73,10 +87,12 @@ class ProjectService(BaseService[Project, ProjectResponse]):
 
     async def create(self, data: ProjectCreate, user: User) -> Project:
         project = Project(**data.model_dump(exclude_unset=True), owner_id=user.id)
-        await self.project_repo.create(project)
+        created = await self.project_repo.create(project)
+
+        await self.project_cache.set(self._project_key(created.id), created)
 
         owner_membership = ProjectMember(
-            project_id=project.id,
+            project_id=created.id,
             user_id=user.id,
             role=MemberRole.OWNER,
             status=MemberStatus.ACCEPTED
@@ -88,8 +104,14 @@ class ProjectService(BaseService[Project, ProjectResponse]):
 
     async def update(self, project_id: UUID, data: ProjectUpdate, user: User) -> Project:
         project = await self._get_project_for_user(project_id, user, require_owner=True)
-        return await self.project_repo.update(project, data.model_dump(exclude_unset=True))
+        updated = await self.project_repo.update(project, data.model_dump(exclude_unset=True))
+
+        await self.project_cache.set(self._project_key(project.id), updated)
+        
+        return updated
 
     async def delete(self, project_id: UUID, user: User) -> None:
         project = await self._get_project_for_user(project_id, user, require_owner=True)
-        return await self.project_repo.delete(project)
+        await self.project_repo.delete(project)
+        await self.project_cache.invalidate(self._project_key(project.id))
+

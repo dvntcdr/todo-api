@@ -1,3 +1,4 @@
+from typing import Any
 from uuid import UUID
 
 
@@ -11,3 +12,7 @@ def user_key_by_username(username: str) -> str:
 
 def task_key_by_id(id: UUID) -> str:
     return f'task:id:{str(id)}'
+
+
+def get_cache_key(prefix: str, identifier: Any) -> str:
+    return f'{prefix}:{str(identifier)}'
