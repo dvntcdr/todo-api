@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from src.core.caching.cache_keys import task_key_by_id
+from src.core.caching.cache_keys import get_cache_key
 from src.core.caching.cache_manager import CacheManager
 from src.core.caching.cache_service import CacheService
 from src.core.exceptions import ForbiddenException, NotFoundException
@@ -21,6 +21,8 @@ class TaskService(BaseService[Task, TaskResponse]):
     Task service class
     """
 
+    CACHE_PREFIX: str = 'task:id'
+
     def __init__(
         self,
         task_repo: TaskRepository,
@@ -35,7 +37,7 @@ class TaskService(BaseService[Task, TaskResponse]):
 
     async def _get_task(self, task_id: UUID, use_cache: bool = True) -> Task:
         return await self.task_cache.get_or_fetch(
-            key=task_key_by_id(task_id),
+            key=get_cache_key(self.CACHE_PREFIX, task_id),
             fetch=lambda: self.task_repo.get_by_id(task_id),
             use_cache=use_cache
         )
@@ -108,7 +110,7 @@ class TaskService(BaseService[Task, TaskResponse]):
         created = await self.task_repo.create(task)
 
         await self.task_cache.set(
-            task_key_by_id(created.id),
+            get_cache_key(self.CACHE_PREFIX, created.id),
             created
         )
 
@@ -120,7 +122,7 @@ class TaskService(BaseService[Task, TaskResponse]):
 
         updated = await self.task_repo.update(task, data.model_dump(exclude_unset=True))
         await self.task_cache.set(
-            task_key_by_id(task.id),
+            get_cache_key(self.CACHE_PREFIX, task.id),
             updated
         )
 
@@ -131,4 +133,4 @@ class TaskService(BaseService[Task, TaskResponse]):
 
         await self._check_edit_permission(task, user)
         await self.task_repo.delete(task)
-        await self.task_cache.invalidate(task_key_by_id(task.id))
+        await self.task_cache.invalidate(get_cache_key(self.CACHE_PREFIX, task.id))
