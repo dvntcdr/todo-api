@@ -14,6 +14,8 @@ from src.schemas.pagination import PagedResponse, PaginationParams
 from src.schemas.task import TaskCreate, TaskFilterParams, TaskResponse, TaskUpdate
 from src.services.base import BaseService
 
+from src.core.caching.cache_manager import CacheManager
+
 
 class TaskService(BaseService[Task, TaskResponse]):
     """
@@ -30,31 +32,14 @@ class TaskService(BaseService[Task, TaskResponse]):
         self.task_repo = task_repo
         self.project_repo = project_repo
         self.member_repo = member_repo
-        self.cache = cache
+        self.task_cache = CacheManager[Task](cache, Task)
 
     async def _get_task(self, task_id: UUID, use_cache: bool = True) -> Task:
-        task_key = task_key_by_id(task_id)
-
-        if use_cache:
-            try:
-                cached = await self.cache.get(task_key)
-                if cached:
-                    return Task.from_dict(cached)
-            except Exception:
-                pass  # TODO: add logging
-
-        task = await self.task_repo.get_by_id(task_id)
-
-        if task is None:
-            raise NotFoundException("Task not found")
-
-        if use_cache:
-            try:
-                await self.cache.set(task_key, task.to_dict())
-            except Exception:
-                pass  # TODO: add logging
-
-        return task
+        return await self.task_cache.get_or_fetch(
+            key=task_key_by_id(task_id),
+            fetch=lambda: self.task_repo.get_by_id(task_id),
+            use_cache=use_cache
+        )
 
     async def _get_project_access(self, project_id: UUID, user: User) -> MemberRole:
         project = await self.project_repo.get_by_id(project_id)
@@ -123,7 +108,10 @@ class TaskService(BaseService[Task, TaskResponse]):
         task = Task(**data.model_dump(exclude_unset=True), owner_id=user.id)
         created = await self.task_repo.create(task)
 
-        await self.cache.set(task_key_by_id(created.id), created.to_dict())
+        await self.task_cache.set(
+            task_key_by_id(created.id),
+            created
+        )
 
         return created
 
@@ -132,7 +120,7 @@ class TaskService(BaseService[Task, TaskResponse]):
         await self._check_edit_permission(task, user)
 
         updated = await self.task_repo.update(task, data.model_dump(exclude_unset=True))
-        await self.cache.invalidate(task_key_by_id(task.id))
+        await self.task_cache.invalidate(task_key_by_id(task.id))
 
         return updated
 
@@ -141,4 +129,4 @@ class TaskService(BaseService[Task, TaskResponse]):
 
         await self._check_edit_permission(task, user)
         await self.task_repo.delete(task)
-        await self.cache.invalidate(task_key_by_id(task.id))
+        await self.task_cache.invalidate(task_key_by_id(task.id))

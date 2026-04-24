@@ -24,5 +24,5 @@ class CacheService:
         data = await self.client.get(key)
         return json.loads(data) if data else None
 
-    async def invalidate(self, key: str) -> None:
-        await self.client.delete(key)
+    async def invalidate(self, *keys: str) -> None:
+        await self.client.delete(*keys)
