@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     VERSION: str = __version__
 
     DATABASE_URL: str = 'sqlite+aiosqlite:///./todo.db'
+    TEST_DATABASE_URL: str
     ALEMBIC_DATABASE_URL: str = 'sqlite:///./todo.db'
 
     REDIS_URL: str = 'redis://localhost:6379'

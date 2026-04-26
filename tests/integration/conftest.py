@@ -1,16 +1,17 @@
 from typing import AsyncGenerator, Generator
 
-import pytest
 from httpx import ASGITransport, AsyncClient
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from src.core.config import settings
 from src.core.limiter import limiter
 from src.core.security import create_access_token
 from src.db.base import Base
 from src.db.session import get_session
 from src.main import app
-from src.models.project import Project
 from src.models.membership import MemberRole, MemberStatus, ProjectMember
+from src.models.project import Project
 from src.models.task import Task
 from src.models.user import User
 from tests.factories import (
@@ -20,10 +21,11 @@ from tests.factories import (
     UserFactory,
 )
 
-TEST_DATABASE_URL = 'sqlite+aiosqlite:///./test.db'
+TEST_DATABASE_URL = settings.TEST_DATABASE_URL
 
-
-engine = create_async_engine(url=TEST_DATABASE_URL, connect_args={'check_same_thread': False})
+engine = create_async_engine(
+    url=TEST_DATABASE_URL, pool_size=20, max_overflow=10
+)
 TestSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
@@ -34,13 +36,15 @@ async def setup_db():
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+    await engine.dispose()
 
 
 @pytest.fixture
 async def db_session() -> AsyncGenerator[AsyncSession]:
     async with TestSessionLocal() as session:
-        yield session
-        await session.rollback()
+        async with session.begin():
+            yield session
+            await session.rollback()
 
 
 @pytest.fixture
@@ -66,33 +70,27 @@ def disable_rate_limiting() -> Generator:
 @pytest.fixture
 async def user(db_session: AsyncSession) -> User:
     user = UserFactory.build()
-
     db_session.add(user)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(user)
-
     return user
 
 
 @pytest.fixture
 async def second_user(db_session: AsyncSession) -> User:
     user = UserFactory.build()
-
     db_session.add(user)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(user)
-
     return user
 
 
 @pytest.fixture
 async def project(db_session: AsyncSession, user: User) -> Project:
     project = ProjectFactory.build(owner_id=user.id)
-
     db_session.add(project)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(project)
-
     return project
 
 
@@ -101,11 +99,9 @@ async def membership(db_session: AsyncSession, user: User, project: Project) -> 
     membership = ProjectMemberFactory(
         project_id=project.id, user_id=user.id, role=MemberRole.OWNER
     )
-
     db_session.add(membership)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(membership)
-
     return membership
 
 
@@ -114,11 +110,9 @@ async def second_membership(db_session: AsyncSession, second_user: User, project
     membership = ProjectMemberFactory(
         project_id=project.id, user_id=second_user.id, role=MemberRole.MEMBER
     )
-
     db_session.add(membership)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(membership)
-
     return membership
 
 
@@ -130,22 +124,18 @@ async def second_pending_membership(db_session: AsyncSession, second_user: User,
         role=MemberRole.MEMBER,
         status=MemberStatus.PENDING
     )
-
     db_session.add(membership)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(membership)
-
     return membership
 
 
 @pytest.fixture
 async def task(db_session: AsyncSession, user: User, project: Project) -> Task:
     task = TaskFactory.build(owner_id=user.id, project_id=project.id)
-
     db_session.add(task)
-    await db_session.commit()
+    await db_session.flush()
     await db_session.refresh(task)
-
     return task
 
 
