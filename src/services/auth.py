@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
-from src.core.caching.cache_keys import user_key_by_id, user_key_by_username
+from src.core.caching.cache_keys import get_cache_key
+from src.core.caching.cache_manager import CacheManager
 from src.core.caching.cache_service import CacheService
 from src.core.config import settings
 from src.core.exceptions import (
@@ -38,7 +39,7 @@ class AuthService:
     ) -> None:
         self.user_repo = user_repo
         self.token_repo = token_repo
-        self.cache = cache
+        self.user_cache = CacheManager[User](cache, User)
 
     async def register(self, data: UserCreate) -> User:
         existing = await self.user_repo.get_by_username_or_email(data.username, data.password)
@@ -55,18 +56,18 @@ class AuthService:
             hashed_password=hashed_pwd
         )
 
-        return await self.user_repo.create(user)
+        created = await self.user_repo.create(user)
+
+        await self.user_cache.set(get_cache_key('user:username', created.username), created)
+
+        return created
 
     async def login(self, username: str, password: str) -> TokenResponse:
-        user_key = user_key_by_username(username)
-        cached = await self.cache.get(user_key)
-
-        if cached is not None:
-            user = User.from_dict(cached)
-        else:
-            user = await self.user_repo.get_by_username(username)
-            if user is not None:
-                await self.cache.set(user_key, user.to_dict())
+        user = await self.user_cache.get_or_fetch(
+            get_cache_key('user:username', username),
+            lambda: self.user_repo.get_by_username(username),
+            use_cache=True
+        )
 
         if user is None or not verify_password(password, user.hashed_password):
             raise InvalidCredentialsException()
@@ -88,17 +89,13 @@ class AuthService:
 
         await self.token_repo.revoke(token)
 
-        user_key = user_key_by_id(token.owner_id)
-        cached = await self.cache.get(user_key)
-
-        if cached is not None:
-            user = User(**cached)
-        else:
-            user = await self.user_repo.get_by_id(token.owner_id)
-            if user is not None:
-                await self.cache.set(user_key, user.to_dict())
-
-        if user is None:
+        try:
+            user = await self.user_cache.get_or_fetch(
+                get_cache_key('user:username', token.owner_id),
+                lambda: self.user_repo.get_by_id(token.owner_id),
+                use_cache=True
+            )
+        except Exception:
             raise InvalidCredentialsException()
 
         return await self._generate_tokens(user)
