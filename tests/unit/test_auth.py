@@ -7,6 +7,7 @@ from src.core.exceptions import (
     AlreadyExistsException,
     InvalidCredentialsException,
     InvalidOperationException,
+    NotFoundException,
     TokenExpiredException,
     TokenRevokedException,
 )
@@ -61,7 +62,7 @@ class TestLogin:
     async def test_raises_if_user_not_found(self, auth_service, user_repo):
         user_repo.get_by_username.return_value = None
 
-        with pytest.raises(InvalidCredentialsException):
+        with pytest.raises(NotFoundException):
             await auth_service.login('nobody', USER_PASSWORD)
 
     async def test_raises_if_wrong_password(self, auth_service, user_repo):
