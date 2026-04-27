@@ -65,7 +65,7 @@ class TestLogin:
 
     async def test_user_not_found(self, client: AsyncClient):
         response = await client.post(self.URL, data=self._get_login_data(username='some_username'))
-        assert response.status_code == 401
+        assert response.status_code == 404
 
     async def test_wrong_password(self, client: AsyncClient, user: User):
         login_data = self._get_login_data(username=user.username, password='somepassword')

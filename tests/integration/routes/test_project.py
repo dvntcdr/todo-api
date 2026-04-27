@@ -104,7 +104,7 @@ class TestUpdateProject:
             'title': kwargs.get('title', 'Updated project title'),
             'description': kwargs.get('description', 'Updated project description'),
             'status': kwargs.get('status', ProjectStatus.ACTIVE.value),
-            'due_date': kwargs.get('description', '2026-12-12T00:00:00'),
+            'due_date': kwargs.get('description', '2026-12-12T00:00:00Z'),
         }
 
     async def test_success(self, project: Project, client: AsyncClient, auth_headers):

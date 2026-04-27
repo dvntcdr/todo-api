@@ -130,7 +130,7 @@ class TestUpdateTask:
             'description': kwargs.get('description', 'Updated task description'),
             'status': kwargs.get('status', TaskStatus.ACTIVE.value),
             'priority': kwargs.get('description', TaskPriority.HIGH.value),
-            'due_date': kwargs.get('description', '2026-12-12T00:00:00'),
+            'due_date': kwargs.get('description', '2026-12-12T00:00:00Z'),
         }
 
     async def test_success(self, task: Task, client: AsyncClient, auth_headers):

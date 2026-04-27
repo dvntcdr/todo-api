@@ -1,9 +1,12 @@
 from typing import AsyncGenerator, Generator
 
+import fakeredis
 from httpx import ASGITransport, AsyncClient
 import pytest
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from src.core.caching.cache import get_redis
 from src.core.config import settings
 from src.core.limiter import limiter
 from src.core.security import create_access_token
@@ -42,17 +45,26 @@ async def setup_db():
 @pytest.fixture
 async def db_session() -> AsyncGenerator[AsyncSession]:
     async with TestSessionLocal() as session:
-        async with session.begin():
-            yield session
-            await session.rollback()
+        yield session
+        await session.rollback()
 
 
 @pytest.fixture
 async def client(db_session) -> AsyncGenerator[AsyncClient]:
     async def override_get_session():
         yield db_session
+    
+    async def override_get_redis() -> AsyncGenerator[Redis]:
+        fake_redis: Redis = fakeredis.FakeAsyncRedis(
+            decode_responses=True
+        )
+        try:
+            yield fake_redis
+        finally:
+            await fake_redis.aclose()
 
     app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_redis] = override_get_redis
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url='http://test') as async_client:
         yield async_client
