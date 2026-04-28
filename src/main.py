@@ -13,6 +13,10 @@ from src.core.caching.cache import connect_redis, disconnect_redis
 from src.core.config import settings
 from src.core.exceptions import AppException
 from src.core.limiter import limiter
+from src.core.logging import configure_logging
+
+
+configure_logging()
 
 
 @asynccontextmanager

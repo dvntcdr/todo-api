@@ -1,7 +1,11 @@
+import logging
+
 from typing import Awaitable, Callable
 
 from src.core.caching.cache_service import CacheService
 from src.core.exceptions import NotFoundException
+
+logger = logging.getLogger(__name__)
 
 
 class CacheManager[M]:
@@ -24,8 +28,8 @@ class CacheManager[M]:
                 cached = await self.cache.get(key)
                 if cached:
                     return self.model_cls.from_dict(cached)  # type: ignore
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f'Cache read failed | key={key} | error={e}')
         
         instance = await fetch()
 
@@ -33,21 +37,18 @@ class CacheManager[M]:
             raise NotFoundException()
         
         if use_cache:
-            try:
-                await self.cache.set(key, instance.to_dict())  # type: ignore
-            except Exception:
-                pass
+            await self.set(key, instance.to_dict())  # type: ignore
         
         return instance
     
     async def set(self, key: str, instance: M) -> None:
         try:
             await self.cache.set(key, instance.to_dict())  # type: ignore
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f'Cache write failed | key={key} | error={e}')
 
     async def invalidate(self, *keys: str) -> None:
         try:
             await self.cache.invalidate(*keys)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f'Cache invalidation failed | keys={keys} | error={e}')
