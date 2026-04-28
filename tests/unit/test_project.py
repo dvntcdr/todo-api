@@ -51,12 +51,17 @@ class TestGetAll:
         projects = [ProjectFactory.build(owner_id=user.id) for _ in range(3)]
         pg_params = PaginationParams()  # type: ignore
 
-        project_repo.get_accessible_projects.return_value = (projects, len(projects))
-        project_repo.get_task_counts.return_value = {
-            'active': 1,
-            'completed': 1,
-        }
-
+        project_repo.get_accessible_projects.return_value = (
+            [
+                {
+                    'project': project,
+                    'active_tasks': 0,
+                    'completed_tasks': 0
+                }
+                for project in projects
+            ],
+            len(projects)
+        )
         result = await project_service.get_all(user, pg_params)
 
         assert result.total == len(projects)
@@ -81,11 +86,17 @@ class TestGetAll:
         pg_params = PaginationParams()  # type: ignore
         filters = ProjectFilterParams(status=ProjectStatus.ACTIVE)
 
-        project_repo.get_accessible_projects.return_value = (projects, len(projects))
-        project_repo.get_task_counts.return_value = {
-            'active': 1,
-            'completed': 1,
-        }
+        project_repo.get_accessible_projects.return_value = (
+            [
+                {
+                    'project': project,
+                    'active_tasks': 0,
+                    'completed_tasks': 0
+                }
+                for project in projects
+            ],
+            len(projects)
+        )
 
         result = await project_service.get_all(user, pg_params, filters)
 
