@@ -24,6 +24,7 @@ from src.repos.refresh_token import RefreshTokenRepository
 from src.repos.user import UserRepository
 from src.schemas.auth import ChangePasswordRequest, TokenResponse
 from src.schemas.user import UserCreate
+from src.worker.tasks import send_welcome_email
 
 
 class AuthService:
@@ -59,6 +60,8 @@ class AuthService:
         created = await self.user_repo.create(user)
 
         await self.user_cache.set(get_cache_key('user:username', created.username), created)
+
+        send_welcome_email.delay(user.username, user.email)  # type: ignore
 
         return created
 
