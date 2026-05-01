@@ -2,7 +2,7 @@ from fastapi import APIRouter, status
 from fastapi.requests import Request
 
 from src.api.deps.auth import AuthServiceDep, CurrentUserDep, LoginFormDep
-from src.core.limiter import limiter
+from src.infra.rate_limit.limiter import limiter
 from src.models.user import User
 from src.schemas.auth import (
     ChangePasswordRequest,

@@ -1,7 +1,10 @@
-from .base import BaseRepository
-from src.models.membership import ProjectMember
 from uuid import UUID
+
 from sqlalchemy import select
+
+from src.models.membership import ProjectMember
+
+from .base import BaseRepository
 
 
 class ProjectMemberRepository(BaseRepository[ProjectMember]):

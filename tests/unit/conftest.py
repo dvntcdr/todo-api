@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from src.core.caching.cache_service import CacheService
+from src.infra.caching.cache_service import CacheService
 from src.services.auth import AuthService
 from src.services.membership import ProjectMemberService
 from src.services.project import ProjectService

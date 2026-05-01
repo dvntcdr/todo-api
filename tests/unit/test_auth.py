@@ -11,7 +11,7 @@ from src.core.exceptions import (
     TokenExpiredException,
     TokenRevokedException,
 )
-from src.core.security import hash_password
+from src.infra.security.auth import hash_password
 from src.schemas.auth import ChangePasswordRequest
 from src.schemas.user import UserCreate
 from src.services.auth import AuthService

@@ -7,8 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from src.core.config import settings
-from src.core.messaging.email import send_email
-from src.core.messaging.email_templates import due_date_reminder_email, welcome_email
+from src.infra.messaging.email import send_email
+from src.infra.messaging.email_templates import due_date_reminder_email, welcome_email
 from src.models.task import Task, TaskStatus
 from src.models.user import User
 from src.worker.app import celery_app

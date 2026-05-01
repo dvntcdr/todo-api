@@ -1,10 +1,10 @@
 from uuid import UUID
 
-from src.core.caching.cache_keys import get_cache_key
-from src.core.caching.cache_manager import CacheManager
-from src.core.caching.cache_service import CacheService
 from src.core.exceptions import ForbiddenException
-from src.core.security.permissions import can_edit_tasks, can_view_tasks
+from src.infra.caching.cache_keys import get_cache_key
+from src.infra.caching.cache_manager import CacheManager
+from src.infra.caching.cache_service import CacheService
+from src.infra.security.permissions import can_edit_tasks, can_view_tasks
 from src.models.membership import MemberRole
 from src.models.project import Project
 from src.models.task import Task
@@ -63,25 +63,25 @@ class TaskService(BaseService[Task, TaskResponse]):
             return MemberRole.MEMBER
 
         return MemberRole.VIEWER
-    
+
     async def _check_view_permission(self, task: Task, user: User) -> None:
         if task.project_id is None:
             if task.owner_id != user.id:
                 raise ForbiddenException()
             return
-        
+
         await self._get_project_access(task.project_id, user)
 
     async def _check_edit_permission(self, task: Task, user: User) -> None:
         if task.owner_id == user.id:
             return
-        
+
         if task.project_id:
             access = await self._get_project_access(task.project_id, user)
             if access == MemberRole.VIEWER:
                 raise ForbiddenException()
             return
-        
+
         raise ForbiddenException()
 
     async def get_all(

@@ -1,8 +1,9 @@
 from uuid import UUID
 
-from src.core.caching.cache_manager import CacheManager
-from src.core.caching.cache_service import CacheService
 from src.core.exceptions import ForbiddenException
+from src.infra.caching.cache_keys import get_cache_key
+from src.infra.caching.cache_manager import CacheManager
+from src.infra.caching.cache_service import CacheService
 from src.models.membership import MemberRole, MemberStatus, ProjectMember
 from src.models.project import Project
 from src.models.user import User
@@ -17,7 +18,6 @@ from src.schemas.project import (
     TaskCounts,
 )
 from src.services.base import BaseService
-from src.core.caching.cache_keys import get_cache_key
 
 
 class ProjectService(BaseService[Project, ProjectResponse]):
@@ -36,7 +36,7 @@ class ProjectService(BaseService[Project, ProjectResponse]):
         self.project_repo = project_repo
         self.member_repo = member_repo
         self.project_cache = CacheManager[Project](cache, Project)
-    
+
     async def _get_project(self, project_id: UUID, use_cache: bool = True) -> Project:
         return await self.project_cache.get_or_fetch(
             self._project_key(project_id),
@@ -65,7 +65,7 @@ class ProjectService(BaseService[Project, ProjectResponse]):
         response = ProjectResponse.model_validate(project)
         response.task_counts = TaskCounts(**counts)
         return response
-    
+
     def _project_key(self, project_id: UUID) -> str:
         return get_cache_key(self.CACHE_PREFIX, project_id)
 
@@ -107,11 +107,10 @@ class ProjectService(BaseService[Project, ProjectResponse]):
         updated = await self.project_repo.update(project, data.model_dump(exclude_unset=True))
 
         await self.project_cache.set(self._project_key(project.id), updated)
-        
+
         return updated
 
     async def delete(self, project_id: UUID, user: User) -> None:
         project = await self._get_project_for_user(project_id, user, require_owner=True)
         await self.project_repo.delete(project)
         await self.project_cache.invalidate(self._project_key(project.id))
-

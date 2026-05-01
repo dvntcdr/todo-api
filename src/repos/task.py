@@ -1,11 +1,11 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select, or_
+from sqlalchemy import or_, select
 
+from src.models.membership import MemberStatus, ProjectMember
 from src.models.task import Task
 from src.repos.base import BaseRepository
-from src.models.membership import ProjectMember, MemberStatus
 
 
 class TaskRepository(BaseRepository[Task]):

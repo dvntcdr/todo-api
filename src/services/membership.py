@@ -6,18 +6,17 @@ from src.core.exceptions import (
     InvalidOperationException,
     NotFoundException,
 )
-from src.core.security.permissions import can_manage_members
-from src.models.project import Project
+from src.infra.caching.cache_keys import get_cache_key
+from src.infra.caching.cache_manager import CacheManager
+from src.infra.caching.cache_service import CacheService
+from src.infra.security.permissions import can_manage_members
 from src.models.membership import MemberRole, MemberStatus, ProjectMember
+from src.models.project import Project
 from src.models.user import User
-from src.repos.project import ProjectRepository
 from src.repos.membership import ProjectMemberRepository
+from src.repos.project import ProjectRepository
 from src.repos.user import UserRepository
 from src.schemas.membership import InviteMemberRequest
-
-from src.core.caching.cache_service import CacheService
-from src.core.caching.cache_manager import CacheManager
-from src.core.caching.cache_keys import get_cache_key
 
 
 class ProjectMemberService:

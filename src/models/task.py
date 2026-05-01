@@ -5,7 +5,7 @@ from uuid import UUID
 from sqlalchemy import DateTime, Enum, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base
+from src.infra.db.base import Base
 
 
 class TaskStatus(StrEnum):

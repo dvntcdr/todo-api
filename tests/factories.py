@@ -4,7 +4,7 @@ from uuid import uuid4
 from factory.base import Factory
 from factory.declarations import LazyFunction, Sequence
 
-from src.core.security import hash_password, hash_refresh_token
+from src.infra.security.auth import hash_password, hash_refresh_token
 from src.models.project import Project, ProjectStatus
 from src.models.refresh_token import RefreshToken
 from src.models.task import Task, TaskPriority, TaskStatus

@@ -2,7 +2,7 @@ import logging
 
 from typing import Awaitable, Callable
 
-from src.core.caching.cache_service import CacheService
+from src.infra.caching.cache_service import CacheService
 from src.core.exceptions import NotFoundException
 
 logger = logging.getLogger(__name__)

@@ -1,8 +1,5 @@
 from datetime import datetime, timedelta, timezone
 
-from src.core.caching.cache_keys import get_cache_key
-from src.core.caching.cache_manager import CacheManager
-from src.core.caching.cache_service import CacheService
 from src.core.config import settings
 from src.core.exceptions import (
     AlreadyExistsException,
@@ -11,7 +8,10 @@ from src.core.exceptions import (
     TokenExpiredException,
     TokenRevokedException,
 )
-from src.core.security import (
+from src.infra.caching.cache_keys import get_cache_key
+from src.infra.caching.cache_manager import CacheManager
+from src.infra.caching.cache_service import CacheService
+from src.infra.security.auth import (
     create_access_token,
     create_refresh_token,
     hash_password,

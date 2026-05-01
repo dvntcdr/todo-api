@@ -3,8 +3,8 @@ from uuid import UUID
 
 from sqlalchemy import func, or_, select
 
-from src.models.project import Project
 from src.models.membership import MemberStatus, ProjectMember
+from src.models.project import Project
 from src.models.task import Task, TaskStatus
 from src.repos.base import BaseRepository
 
@@ -72,7 +72,7 @@ class ProjectRepository(BaseRepository[Project]):
 
         if filters:
             stmt = self._apply_filters(stmt, filters)
-        
+
         total = await self.session.scalar(
             select(func.count()).select_from(stmt.subquery())
         ) or 0

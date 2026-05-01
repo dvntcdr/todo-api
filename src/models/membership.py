@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlalchemy import Enum, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base
+from src.infra.db.base import Base
 
 
 class MemberRole(StrEnum):

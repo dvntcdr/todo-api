@@ -9,12 +9,11 @@ from slowapi.errors import RateLimitExceeded
 
 from src import models  # noqa
 from src.api.v1.router import v1_router
-from src.core.caching.cache import connect_redis, disconnect_redis
 from src.core.config import settings
 from src.core.exceptions import AppException
-from src.core.limiter import limiter
-from src.core.logging import configure_logging
-
+from src.infra.caching.cache import connect_redis, disconnect_redis
+from src.infra.logging.logger import configure_logging
+from src.infra.rate_limit.limiter import limiter
 
 configure_logging()
 

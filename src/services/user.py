@@ -6,7 +6,7 @@ from src.core.exceptions import (
     InvalidOperationException,
     NotFoundException,
 )
-from src.core.security import verify_password
+from src.infra.security.auth import verify_password
 from src.models.user import User
 from src.repos.user import UserRepository
 from src.schemas.user import ChangeEmailRequest, ChangeUsernameRequest

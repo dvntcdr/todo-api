@@ -1,17 +1,17 @@
 from typing import AsyncGenerator, Generator
 
 import fakeredis
-from httpx import ASGITransport, AsyncClient
 import pytest
+from httpx import ASGITransport, AsyncClient
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.core.caching.cache import get_redis
 from src.core.config import settings
-from src.core.limiter import limiter
-from src.core.security import create_access_token
-from src.db.base import Base
-from src.db.session import get_session
+from src.infra.caching.cache import get_redis
+from src.infra.db.base import Base
+from src.infra.db.session import get_session
+from src.infra.rate_limit.limiter import limiter
+from src.infra.security.auth import create_access_token
 from src.main import app
 from src.models.membership import MemberRole, MemberStatus, ProjectMember
 from src.models.project import Project
@@ -53,7 +53,7 @@ async def db_session() -> AsyncGenerator[AsyncSession]:
 async def client(db_session) -> AsyncGenerator[AsyncClient]:
     async def override_get_session():
         yield db_session
-    
+
     async def override_get_redis() -> AsyncGenerator[Redis]:
         fake_redis: Redis = fakeredis.FakeAsyncRedis(
             decode_responses=True
