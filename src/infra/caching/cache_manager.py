@@ -10,7 +10,11 @@ logger = logging.getLogger(__name__)
 
 class CacheManager[M]:
     """
-    Generic cache manager
+    Generic cache manager for storing, retrieving, and invalidating cached models.
+
+    Attributes:
+        cache (CacheService): The underlying cache service used for storage.
+        model_cls (type[M]): The model class used to deserialize cached data.
     """
 
     def __init__(self, cache: CacheService, model_cls: type[M]) -> None:

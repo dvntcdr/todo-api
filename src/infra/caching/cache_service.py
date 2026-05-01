@@ -5,7 +5,11 @@ from redis.asyncio import Redis
 
 class CacheService:
     """
-    Redis cache service class
+    A service class for caching data using Redis.
+
+    Attributes:
+        DEFAULT_TTL (int): The default time-to-live in seconds for cached entries (300 seconds).
+        client (Redis): The async Redis client used to interact with the Redis instance.
     """
 
     DEFAULT_TTL: int = 300
