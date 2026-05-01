@@ -1,5 +1,6 @@
 from celery import Celery
 from src.core.config import settings
+from celery.schedules import crontab
 
 celery_app = Celery(
     'todo',
@@ -9,3 +10,11 @@ celery_app = Celery(
 )
 
 celery_app.autodiscover_tasks(['src.worker'])
+
+celery_app.conf.beat_schedule = {
+    'send-due-date-reminders': {
+        'task': 'src.worker.tasks.send_due_date_reminders',
+        'schedule': crontab(hour=8, minute=0)
+        # 'schedule': 30.0,
+    }
+}
