@@ -1,3 +1,6 @@
+from src.core.config import settings
+
+
 def welcome_email(username: str) -> str:
     """
     Generate a welcome email template for the given username.
@@ -42,4 +45,25 @@ def due_date_reminder_email(username: str, data: list[dict]) -> str:
         <h2>Hi {username}, you have tasks due tommorow!</h2>
         <ul>{task_list}</ul>
         <p>Stay on top of your work!</p>
+    '''
+
+
+def password_reset_email(username: str, reset_token: str) -> str:
+    """
+    Generate a password reset email template for the given username and reset token.
+
+    Args:
+        username (str): The username of the recipient.
+        reset_token (str): The password reset token to include in the email.
+
+    Returns:
+        str: The HTML content of the password reset email.
+    """
+    return f'''
+        <h2>Hi {username}, you requested a password reset.</h2>
+        <p>Use the token below to reset your password. It expires in {settings.RESET_TOKEN_EXPIRE_MINUTES} minutes and can only be used once!</p>
+        <hr>
+        <p>{reset_token}</p>
+        <hr>
+        <p>If you did not request this, you can safely ignore this email.</p>
     '''

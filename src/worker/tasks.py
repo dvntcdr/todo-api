@@ -8,7 +8,11 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from src.core.config import settings
 from src.infra.messaging.email import send_email
-from src.infra.messaging.email_templates import due_date_reminder_email, welcome_email
+from src.infra.messaging.email_templates import (
+    due_date_reminder_email,
+    password_reset_email,
+    welcome_email,
+)
 from src.models.task import Task, TaskStatus
 from src.models.user import User
 from src.worker.app import celery_app
@@ -27,11 +31,13 @@ def run_async(async_func):
 @run_async
 async def send_welcome_email(username: str, email: str) -> None:
     logger.info(f'Sending welcome email to: {email}')
+
     await send_email(
         subject='Welcome to Todo App!',
         recipients=[email],
         body=welcome_email(username)
     )
+
     logger.info(f'Welcome email sent to: {email}')
 
 
@@ -76,9 +82,25 @@ async def send_due_date_reminders() -> None:
 
     for email, data in user_tasks.items():
         logger.info(f'Sending due date reminder email to: {email}')
+
         await send_email(
             subject='Tasks due tommorow',
             recipients=[email],
             body=due_date_reminder_email(data['username'], data['tasks'])  # type: ignore
         )
+
         logger.info(f'Reminder email sent to: {email}')
+
+
+@celery_app.task(name='src.worker.tasks.send_password_reset_email')
+@run_async
+async def send_password_reset_email(username: str, email: str, reset_token: str) -> None:
+    logger.info(f'Sending password reset email to: {email}')
+
+    await send_email(
+        subject='Password Reset Request',
+        recipients=[email],
+        body=password_reset_email(username, reset_token)
+    )
+
+    logger.info(f'Password reset email sent to: {email}')

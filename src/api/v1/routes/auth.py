@@ -6,8 +6,10 @@ from src.infra.rate_limit.limiter import limiter
 from src.models.user import User
 from src.schemas.auth import (
     ChangePasswordRequest,
+    ForgotPasswordRequest,
     LogoutRequest,
     RefreshRequest,
+    ResetPasswordRequest,
     TokenResponse,
 )
 from src.schemas.user import UserCreate, UserResponse
@@ -69,3 +71,23 @@ async def change_password(
     current_user: CurrentUserDep
 ) -> None:
     return await service.change_password(current_user, data)
+
+
+@router.post('/forgot-password', status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit('3/minute')
+async def forgot_password(
+    request: Request,  # noqa
+    service: AuthServiceDep,
+    data: ForgotPasswordRequest
+) -> None:
+    return await service.forgot_password(data.email)
+
+
+@router.post('/reset-password', status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit('5/minute')
+async def reset_password(
+    request: Request,  # noqa
+    service: AuthServiceDep,
+    data: ResetPasswordRequest
+) -> None:
+    return await service.reset_password(data.token, data.new_password)

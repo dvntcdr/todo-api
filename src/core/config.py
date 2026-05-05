@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     JWT_ALGORITHM: str = 'HS256'
 
+    RESET_TOKEN_EXPIRE_MINUTES: int = 10
+
     PAGINATION_LIMIT: int = 10
 
     model_config = SettingsConfigDict(

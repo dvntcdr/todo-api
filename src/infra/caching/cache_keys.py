@@ -12,3 +12,7 @@ def user_key_by_username(username: str) -> str:
 
 def get_cache_key(prefix: str, identifier: Any) -> str:
     return f'{prefix}:{str(identifier)}'
+
+
+def reset_token_key(token_hash: str) -> str:
+    return f'reset_token:{token_hash}'

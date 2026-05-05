@@ -16,6 +16,11 @@ class UserRepository(BaseRepository[User]):
             select(User).where(User.username == username)
         )
 
+    async def get_by_email(self, email: str) -> User | None:
+        return await self.session.scalar(
+            select(User).where(User.email == email)
+        )
+
     async def get_by_username_or_email(self, username: str = '', email: str = '') -> User | None:
         return await self.session.scalar(
             select(User).where(

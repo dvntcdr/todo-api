@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta, timezone
+from uuid import UUID
 
 from src.core.config import settings
 from src.core.exceptions import (
     AlreadyExistsException,
     InvalidCredentialsException,
     InvalidOperationException,
+    NotFoundException,
     TokenExpiredException,
     TokenRevokedException,
 )
@@ -14,8 +16,10 @@ from src.infra.caching.cache_service import CacheService
 from src.infra.security.auth import (
     create_access_token,
     create_refresh_token,
+    create_reset_token,
     hash_password,
     hash_refresh_token,
+    hash_reset_token,
     verify_password,
 )
 from src.models.refresh_token import RefreshToken
@@ -24,7 +28,7 @@ from src.repos.refresh_token import RefreshTokenRepository
 from src.repos.user import UserRepository
 from src.schemas.auth import ChangePasswordRequest, TokenResponse
 from src.schemas.user import UserCreate
-from src.worker.tasks import send_welcome_email
+from src.worker.tasks import send_password_reset_email, send_welcome_email
 
 
 class AuthService:
@@ -40,6 +44,7 @@ class AuthService:
     ) -> None:
         self.user_repo = user_repo
         self.token_repo = token_repo
+        self.cache = cache
         self.user_cache = CacheManager[User](cache, User)
 
     async def register(self, data: UserCreate) -> User:
@@ -148,4 +153,41 @@ class AuthService:
         hashed_pwd = hash_password(data.new_password)
 
         await self.user_repo.update(user, {'hashed_password': hashed_pwd})
+        await self.token_repo.revoke_all_for_user(user.id)
+
+    async def forgot_password(self, email: str) -> None:
+        user = await self.user_repo.get_by_email(email)
+
+        if user is None:
+            raise NotFoundException('User does not exist')
+
+        raw_token, hashed_token = create_reset_token()
+        key = get_cache_key('reset_token', hashed_token)
+
+        await self.cache.set(
+            key,
+            {'user_id': str(user.id)},
+            ttl=settings.RESET_TOKEN_EXPIRE_MINUTES * 60
+        )
+
+        send_password_reset_email.delay(user.username, user.email, raw_token)  # type: ignore
+
+    async def reset_password(self, token: str, new_password: str) -> None:
+        hashed_token = hash_reset_token(token)
+        key = get_cache_key('reset_token', hashed_token)
+
+        data = await self.cache.get(key)
+
+        if data is None:
+            raise InvalidCredentialsException('Reset token is invalid or expired')
+
+        user = await self.user_repo.get_by_id(UUID(data['user_id']))
+
+        if user is None:
+            raise InvalidCredentialsException()
+
+        hashed_pwd = hash_password(new_password)
+
+        await self.user_repo.update(user, {'hashed_password': hashed_pwd})
+        await self.cache.invalidate(key)
         await self.token_repo.revoke_all_for_user(user.id)
