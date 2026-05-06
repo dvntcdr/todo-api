@@ -21,6 +21,7 @@ class UserFactory(Factory[User]):
     full_name = 'John Doe'
     hashed_password = LazyFunction(lambda: hash_password(USER_PASSWORD))
     is_active = True
+    is_verified = True
 
     class Meta:  # type: ignore
         model = User
