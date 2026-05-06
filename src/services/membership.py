@@ -65,6 +65,9 @@ class ProjectMemberService:
         if membership is None:
             raise ForbiddenException('Only project members can view member list')
 
+        if membership.status == MemberStatus.PENDING:
+            raise ForbiddenException()
+
         if membership.role == MemberRole.VIEWER:
             raise ForbiddenException('Viewers cannot view member list')
 
