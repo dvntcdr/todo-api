@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     REDIS_URL: str = 'redis://localhost:6379'
 
-    CELERY_BROKER_URL: str = 'amqp://admin:admin@localhost:5672//'
+    CELERY_BROKER_URL: str
     CELERY_RESULT_BACKEND: str = 'redis://localhost:6379/1'
 
     MAIL_USERNAME: str
