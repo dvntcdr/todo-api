@@ -224,7 +224,9 @@ class AuthService:
         if user.is_verified:
             raise InvalidOperationException('Email is already verified')
 
-        await self.user_repo.update(user, {'is_verified': True})
+        updated = await self.user_repo.update(user, {'is_verified': True})
+
+        await self.user_cache.set(get_cache_key('user:username', updated.username), updated)
         await self.cache.invalidate(key)
 
     async def resend_verification(self, email: str) -> None:
