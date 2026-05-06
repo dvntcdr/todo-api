@@ -42,3 +42,8 @@ class InvalidOperationException(AppException):
 class ForbiddenException(AppException):
     status_code = status.HTTP_403_FORBIDDEN
     detail = 'Forbidden'
+
+
+class EmailNotVerifiedException(AppException):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = 'Email address is not verified'

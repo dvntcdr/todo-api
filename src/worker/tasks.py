@@ -29,13 +29,13 @@ def run_async(async_func):
 
 @celery_app.task(name='src.worker.tasks.send_welcome_email')
 @run_async
-async def send_welcome_email(username: str, email: str) -> None:
+async def send_welcome_email(username: str, email: str, token: str) -> None:
     logger.info(f'Sending welcome email to: {email}')
 
     await send_email(
         subject='Welcome to Todo App!',
         recipients=[email],
-        body=welcome_email(username)
+        body=welcome_email(username, token)
     )
 
     logger.info(f'Welcome email sent to: {email}')
@@ -104,3 +104,13 @@ async def send_password_reset_email(username: str, email: str, reset_token: str)
     )
 
     logger.info(f'Password reset email sent to: {email}')
+
+
+@celery_app.task(name='src.worker.tasks.send_verification_email')
+@run_async
+async def send_verification_email(username: str, email: str, token: str) -> None:
+    await send_email(
+        subject='Verify your email address',
+        recipients=[email],
+        body=welcome_email(username, token)
+    )

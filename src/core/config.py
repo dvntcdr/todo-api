@@ -40,6 +40,8 @@ class Settings(BaseSettings):
 
     RESET_TOKEN_EXPIRE_MINUTES: int = 10
 
+    VERIFICATION_TOKEN_EXPIRE_MINUTES: int = 10
+
     PAGINATION_LIMIT: int = 10
 
     model_config = SettingsConfigDict(

@@ -11,6 +11,8 @@ from src.schemas.auth import (
     RefreshRequest,
     ResetPasswordRequest,
     TokenResponse,
+    VerifyEmailRequest,
+    ResendVerificationRequest
 )
 from src.schemas.user import UserCreate, UserResponse
 
@@ -91,3 +93,23 @@ async def reset_password(
     data: ResetPasswordRequest
 ) -> None:
     return await service.reset_password(data.token, data.new_password)
+
+
+@router.post('/verify-email', status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit('5/minute')
+async def verify_email(
+    request: Request,  # noqa
+    service: AuthServiceDep,
+    data: VerifyEmailRequest
+) -> None:
+    return await service.verify_email(data.token)
+
+
+@router.post('/resend-verification', status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit('3/minute')
+async def resend_verification(
+    request: Request,  # noqa
+    service: AuthServiceDep,
+    data: ResendVerificationRequest
+) -> None:
+    return await service.resend_verification(data.email)

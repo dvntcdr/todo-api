@@ -1,7 +1,7 @@
 from src.core.config import settings
 
 
-def welcome_email(username: str) -> str:
+def welcome_email(username: str, token: str) -> str:
     """
     Generate a welcome email template for the given username.
 
@@ -11,10 +11,14 @@ def welcome_email(username: str) -> str:
     Returns:
         str: The HTML content of the welcome email.
     """
+
     return f'''
         <h2>Welcome to Todo App, {username}!</h2>
         <p>Your account has been created successfully.</p>
-        <p>You can now log in and start managing your tasks and projects :)</p>
+        <p>Use the token below to verify your email address. <b>It expires in {settings.VERIFICATION_TOKEN_EXPIRE_MINUTES} minutes.</b></p>
+        <hr>
+        <p>{token}</p>
+        <hr>
     '''
 
 

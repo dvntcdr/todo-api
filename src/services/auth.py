@@ -4,6 +4,7 @@ from uuid import UUID
 from src.core.config import settings
 from src.core.exceptions import (
     AlreadyExistsException,
+    EmailNotVerifiedException,
     InvalidCredentialsException,
     InvalidOperationException,
     NotFoundException,
@@ -17,9 +18,11 @@ from src.infra.security.auth import (
     create_access_token,
     create_refresh_token,
     create_reset_token,
+    create_verification_token,
     hash_password,
     hash_refresh_token,
     hash_reset_token,
+    hash_verification_token,
     verify_password,
 )
 from src.models.refresh_token import RefreshToken
@@ -28,7 +31,7 @@ from src.repos.refresh_token import RefreshTokenRepository
 from src.repos.user import UserRepository
 from src.schemas.auth import ChangePasswordRequest, TokenResponse
 from src.schemas.user import UserCreate
-from src.worker.tasks import send_password_reset_email, send_welcome_email
+from src.worker.tasks import send_password_reset_email, send_verification_email, send_welcome_email
 
 
 class AuthService:
@@ -59,14 +62,23 @@ class AuthService:
             username=data.username,
             email=data.email,
             full_name=data.full_name,
-            hashed_password=hashed_pwd
+            hashed_password=hashed_pwd,
+            is_verified=False
         )
 
         created = await self.user_repo.create(user)
 
-        await self.user_cache.set(get_cache_key('user:username', created.username), created)
+        raw_token, hashed_token = create_verification_token()
 
-        send_welcome_email.delay(user.username, user.email)  # type: ignore
+        key = get_cache_key('verification_token', hashed_token)
+
+        await self.cache.set(
+            key,
+            {'user_id': str(created.id)},
+            ttl=settings.VERIFICATION_TOKEN_EXPIRE_MINUTES * 60
+        )
+
+        send_welcome_email.delay(user.username, user.email, raw_token)  # type: ignore
 
         return created
 
@@ -79,6 +91,9 @@ class AuthService:
 
         if user is None or not verify_password(password, user.hashed_password):
             raise InvalidCredentialsException()
+
+        if not user.is_verified:
+            raise EmailNotVerifiedException()
 
         return await self._generate_tokens(user)
 
@@ -191,3 +206,43 @@ class AuthService:
         await self.user_repo.update(user, {'hashed_password': hashed_pwd})
         await self.cache.invalidate(key)
         await self.token_repo.revoke_all_for_user(user.id)
+
+    async def verify_email(self, token: str) -> None:
+        hashed_token = hash_verification_token(token)
+        key = get_cache_key('verification_token', hashed_token)
+
+        data = await self.cache.get(key)
+
+        if data is None:
+            raise InvalidCredentialsException('Verification token is invalid or expired')
+
+        user = await self.user_repo.get_by_id(UUID(data['user_id']))
+
+        if user is None:
+            raise InvalidCredentialsException()
+
+        if user.is_verified:
+            raise InvalidOperationException('Email is already verified')
+
+        await self.user_repo.update(user, {'is_verified': True})
+        await self.cache.invalidate(key)
+
+    async def resend_verification(self, email: str) -> None:
+        user = await self.user_repo.get_by_email(email)
+
+        if user is None:
+            raise NotFoundException('User does not exist')
+
+        if user.is_verified:
+            raise InvalidOperationException('Email is already verified')
+
+        raw_token, hashed_token = create_verification_token()
+        key = get_cache_key('verification_token', hashed_token)
+
+        await self.cache.set(
+            key,
+            {'user_id': str(user.id)},
+            ttl=settings.VERIFICATION_TOKEN_EXPIRE_MINUTES * 60
+        )
+
+        send_verification_email.delay(user.username, user.email, raw_token)  # type: ignore

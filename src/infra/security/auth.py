@@ -58,3 +58,13 @@ def create_reset_token() -> tuple[str, str]:
 
 def hash_reset_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
+
+
+def create_verification_token() -> tuple[str, str]:
+    raw_token = secrets.token_urlsafe(64)
+    hashed_token = hashlib.sha256(raw_token.encode()).hexdigest()
+
+    return raw_token, hashed_token
+
+def hash_verification_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
