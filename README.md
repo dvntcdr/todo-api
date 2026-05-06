@@ -24,22 +24,47 @@ Built with modern Python tools and a clean layered architecture.
 
 ## 📦 Tech Stack
 
+**Framework & API**
 - **FastAPI** — web framework
 - **Pydantic** — data validation & settings management
-- **SQLAlchemy** — ORM / database access
+- **slowapi** — rate limiting
+
+**Database**
+- **SQLAlchemy** — async ORM
 - **Alembic** — database migrations
 - **PostgreSQL** — primary database
+- **SQLite** — development & testing database
+
+**Caching & Messaging**
 - **Redis** — caching
-- **uv** — package manager
+- **Celery** — async task queue
+- **RabbitMQ** — message broker
+
+**Auth & Security**
+- **python-jose** — JWT tokens
+- **pwdlib (Argon2)** — password hashing
+
+**Email**
+- **fastapi-mail** — email sending
+
+**Testing**
 - **Pytest** — unit & integration testing
+- **factory-boy** — test data factories
+- **fakeredis** — Redis mock for tests
+
+**Tooling**
+- **uv** — package manager
 - **Docker Compose** — local development environment
 
 ## 🔍 Features
 
-- JWT authentication
+- JWT authentication (access + refresh tokens)
+- Email verification on signup
+- Password reset via email
 - User management
 - Projects & task management
 - Membership / role-based access
+- Async email sending via Celery
 - Redis caching
 - Rate limiting
 - Logging
@@ -50,7 +75,7 @@ Built with modern Python tools and a clean layered architecture.
 
 ### Requirements
 
-- Python 3.12+
+- Python 3.14+
 - Docker + Docker Compose
 - uv
 
@@ -76,6 +101,18 @@ uv run alembic upgrade head
 
 ```bash
 uv run uvicorn src.main:app --reload
+```
+
+### Run the Celery worker
+
+```bash
+uv run celery -A src.worker.app worker --loglevel=info
+```
+
+### Run the Celery beat scheduler (due date reminders)
+
+```bash
+uv run celery -A src.worker.app beat --loglevel=info
 ```
 
 ## 🧪 Testing
