@@ -51,7 +51,7 @@ class AuthService:
         self.user_cache = CacheManager[User](cache, User)
 
     async def register(self, data: UserCreate) -> User:
-        existing = await self.user_repo.get_by_username_or_email(data.username, data.password)
+        existing = await self.user_repo.get_by_username_or_email(data.username, data.email)
 
         if existing is not None:
             raise AlreadyExistsException('User already exists')
