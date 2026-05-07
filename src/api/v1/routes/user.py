@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter
 
 from src.api.deps.auth import CurrentUserDep
@@ -17,6 +19,15 @@ async def get_users(
     pg_params: PaginationDep
 ) -> PagedResponse[UserResponse]:
     return await service.get_all(pg_params)
+
+
+@router.get('/{user_id}', response_model=UserResponse)
+async def get_user(
+    service: UserServiceDep,
+    current_user: CurrentUserDep,
+    user_id: UUID
+) -> User:
+    return await service.get_by_id(user_id)
 
 
 @router.get('/me', response_model=UserResponse)
