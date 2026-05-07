@@ -2,10 +2,21 @@ from fastapi import APIRouter
 
 from src.api.deps.auth import CurrentUserDep
 from src.api.deps.domain.user import UserServiceDep
+from src.api.deps.pagination import PaginationDep
 from src.models.user import User
+from src.schemas.pagination import PagedResponse
 from src.schemas.user import ChangeEmailRequest, ChangeUsernameRequest, UserResponse
 
 router = APIRouter(prefix='/users', tags=['users'])
+
+
+@router.get('/', response_model=PagedResponse[UserResponse])
+async def get_users(
+    service: UserServiceDep,
+    current_user: CurrentUserDep,
+    pg_params: PaginationDep
+) -> PagedResponse[UserResponse]:
+    return await service.get_all(pg_params)
 
 
 @router.get('/me', response_model=UserResponse)
