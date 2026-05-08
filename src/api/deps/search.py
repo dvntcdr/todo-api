@@ -1,0 +1,20 @@
+from typing import Annotated
+
+from fastapi import Depends
+
+from src.api.deps.domain.project import ProjectRepoDep
+from src.api.deps.domain.task import TaskRepoDep
+from src.services.search import SearchService
+from src.schemas.search import SearchRequest
+
+
+def get_search_service(
+    task_repo: TaskRepoDep,
+    project_repo: ProjectRepoDep
+) -> SearchService:
+    return SearchService(task_repo, project_repo)
+
+
+SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
+
+SearchParamsDep = Annotated[SearchRequest, Depends()]
