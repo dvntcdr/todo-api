@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 
 from src.schemas.project import ProjectResponse
 from src.schemas.task import TaskResponse
+from src.schemas.user import UserResponse
 
 
 class SearchRequest(BaseModel):
@@ -12,4 +13,5 @@ class SearchRequest(BaseModel):
 class SearchResponse(BaseModel):
     tasks: list[TaskResponse]
     projects: list[ProjectResponse]
+    users: list[UserResponse]
     total: int
