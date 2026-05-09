@@ -40,3 +40,19 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.scalars(stmt)
 
         return list(result), total
+
+    async def search(self, query: str, limit: int = 10) -> list[User]:
+        tsquery = func.websearch_to_tsquery('english', query)
+
+        stmt = (
+            select(User)
+            .where(
+                User.search_vector.op('@@')(tsquery),
+                User.is_active,
+                User.is_verified
+            )
+            .order_by(func.ts_rank(User.search_vector, tsquery).desc())
+            .limit(limit)
+        )
+
+        return list(await self.session.scalars(stmt))
