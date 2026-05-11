@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
@@ -25,9 +26,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     await disconnect_redis()
 
 
+origins = [
+    'http://localhost'
+]
+
 app = FastAPI(**settings.fastapi_kwargs, lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=['*'],
+    allow_headers=['*'],
+    allow_credentials=True
+)
 
 app.include_router(v1_router)
 
