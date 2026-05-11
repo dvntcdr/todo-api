@@ -109,7 +109,8 @@ Built with modern Python tools and a clean layered architecture.
 | `GET` | `/<user_id>` | Bearer | Retrieve a single user by ID |
 | `GET` | `/me` | Bearer | Retrieve a current user |
 | `PATCH` | `/change-username` | Bearer | Change the username of an existing user |
-| `PATCH` | `/change-email` | Bearer | Change the email of an existing user |
+| `PATCH` | `/change-email` | Bearer | Initiate email change flow for the current user. |
+| `POST` | `/confirm-email-change` | Bearer | Verify a user's new email address using a verification token. |
 
 ### Membership -- `v1/projects/<project_id>/members`
 
