@@ -1,13 +1,18 @@
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from src.api.deps.auth import CurrentUserDep
 from src.api.deps.domain.user import UserServiceDep
 from src.api.deps.pagination import PaginationDep
 from src.models.user import User
 from src.schemas.pagination import PagedResponse
-from src.schemas.user import ChangeEmailRequest, ChangeUsernameRequest, UserResponse
+from src.schemas.user import (
+    ChangeEmailRequest,
+    ChangeUsernameRequest,
+    ConfirmEmailChangeRequest,
+    UserResponse,
+)
 
 router = APIRouter(prefix='/users', tags=['users'])
 
@@ -47,10 +52,19 @@ async def change_username(
     return await service.change_username(current_user, data)
 
 
-@router.patch('/change-email', response_model=UserResponse)
+@router.patch('/change-email', status_code=status.HTTP_204_NO_CONTENT)
 async def change_email(
     service: UserServiceDep,
     current_user: CurrentUserDep,
     data: ChangeEmailRequest
-):
-    return await service.change_email(current_user, data)
+) -> None:
+    return await service.initiate_change_email(current_user, data)
+
+
+@router.post('/confirm-email-change', response_model=UserResponse)
+async def confirm_email_change(
+    service: UserServiceDep,
+    current_user: CurrentUserDep,
+    data: ConfirmEmailChangeRequest
+) -> User:
+    return await service.confirm_email_change(current_user, data.token)
