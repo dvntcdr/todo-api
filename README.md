@@ -1,4 +1,4 @@
-## ☑️ FastAPI Todo API
+# 🚀 Todo API
 
 <p align="center">
     <img src="https://img.shields.io/badge/Python-3.14-blue?logo=python&logoColor=white" />
@@ -16,9 +16,7 @@
 
 ---
 
-# 🚀 Todo API
-
-REST API for managing tasks, projects, users and memberships.
+FastAPI REST API for managing tasks, projects, users and memberships.
 
 Built with modern Python tools and a clean layered architecture.
 
@@ -66,22 +64,22 @@ Built with modern Python tools and a clean layered architecture.
 
 ## API Endpoints
 
-### Auth -- `v1/auth`
+### Auth - `v1/auth`
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `POST` | `/signup` | -- | Register a new user account |
-| `POST` | `/token` | -- | Authenticate a user and issue access and refresh tokens |
+| `POST` | `/signup` | - | Register a new user account and send welcome email with verification token |
+| `POST` | `/token` | - | Authenticate a user and issue access and refresh tokens |
 | `POST` | `/refresh` | Refresh token | Rotate tokens |
 | `POST` | `/logout` | Bearer | Revoke a single refresh token, logging the user out of the current session |
 | `POST` | `/logout-all` | Bearer | Revoke all refresh tokens for a user, logging them out of all sessions |
 | `POST` | `/change-password` | Bearer | Change the authenticated user's password |
 | `POST` | `/forgot-password` | Bearer | Initiate a password reset flow for a user |
 | `POST` | `/reset-password` | Bearer | Reset a user's password using a valid password reset token |
-| `POST` | `/verify-email` | -- | Verify a user's email address using a verification token |
-| `POST` | `/resend-verification` | -- | Resend the email verification link to a user |
+| `POST` | `/verify-email` | - | Verify a user's email address using a verification token |
+| `POST` | `/resend-verification` | - | Resend the email verification link to a user |
 
-### Tasks -- `v1/tasks`
+### Tasks - `v1/tasks`
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
@@ -91,7 +89,7 @@ Built with modern Python tools and a clean layered architecture.
 | `PATCH` | `/<task_id>` | Bearer | Update an existing task with the provided data |
 | `DELETE` | `/<task_id>` | Bearer | Delete a task by ID |
 
-### Projects -- `v1/projects`
+### Projects - `v1/projects`
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
@@ -101,7 +99,7 @@ Built with modern Python tools and a clean layered architecture.
 | `PATCH` | `/<project_id>` | Bearer | Update an existing project, restricted to the project owner |
 | `DELETE` | `/<project_id>` | Bearer | Delete a project, restricted to the project owner |
 
-### Users -- `v1/users`
+### Users - `v1/users`
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
@@ -112,7 +110,7 @@ Built with modern Python tools and a clean layered architecture.
 | `PATCH` | `/change-email` | Bearer | Initiate email change flow for the current user. |
 | `POST` | `/confirm-email-change` | Bearer | Verify a user's new email address using a verification token. |
 
-### Membership -- `v1/projects/<project_id>/members`
+### Membership - `v1/projects/<project_id>/members`
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
@@ -123,11 +121,18 @@ Built with modern Python tools and a clean layered architecture.
 | `DELETE` | `/leave` | Bearer | Remove the current user from a project |
 | `DELETE` | `/<user_id>` | Bearer | Remove a member from a project |
 
-### Search -- `v1/search`
+### Search - `v1/search`
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `GET` | `/` | Bearer | Search for tasks or projects |
+
+### System - `/`
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/` | - | Root endpoint |
+| `GET` | `/health` | - | Health check |
 
 ---
 
@@ -139,11 +144,21 @@ Built with modern Python tools and a clean layered architecture.
 - Docker + Docker Compose
 - uv
 
-### Install dependencies
+### Environment
+
+Generate a secret key:
 
 ```bash
-uv sync
+openssl rand -hex 32
 ```
+
+Copy the example env file and adjust the values to your needs:
+
+```bash
+cp .env.example .env
+```
+
+> ⚠️ Make sure to set the **secret_key**
 
 ### Start services
 
@@ -151,28 +166,11 @@ uv sync
 docker compose up -d
 ```
 
-### Run migrations
+### Run migrations (first time setup)
 
 ```bash
-uv run alembic upgrade head
-```
-
-### Run the API
-
-```bash
-uv run uvicorn src.main:app --reload
-```
-
-### Run the Celery worker
-
-```bash
-uv run celery -A src.worker.app worker --loglevel=info
-```
-
-### Run the Celery beat scheduler (due date reminders)
-
-```bash
-uv run celery -A src.worker.app beat --loglevel=info
+# first time setup
+docker compose exec api uv run alembic upgrade head
 ```
 
 ---
